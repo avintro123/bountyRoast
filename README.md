@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🔥 BountyRoast.lol — Pay to Roast. Pay to Survive.
 
-## Getting Started
+The internet's spiciest founder roast leaderboard. Pay to rank roasts on indie founders. Founders have 72 hours to defend themselves, or stay flame-grilled on **The Grill**.
 
-First, run the development server:
+Inspired by clean, human-crafted indie web design (warm paper minimalism, deep ink typography, and cayenne ember accents).
 
+---
+
+## 🌶️ Core Mechanics
+
+- **The Grill (Ranked Leaderboard)**: Roasts are ranked purely by active bounty size. Higher bounties pin roasts higher.
+- **Drop a Roast**: Anyone can drop a bounty on any founder with a spicy take, back it with real cash, and set a 72-hour countdown timer.
+- **Fuel the Fire**: Spectators can chip in ($1, $5, $25, etc.) to fuel existing roasts and boost them up the leaderboard.
+- **Option A Defense Model**: Targets have 3 strategic options to handle the heat:
+  1. **🛡️ Pay to Clear**: Pay current bounty + $1 to extinguish the roast and erase it from the active Grill.
+  2. **🎤 Post a Comeback (FREE)**: Pin an official rebuttal directly under the roast card on The Grill.
+  3. **🔄 Redirect Flame (FREE)**: Pass the heat to a competitor's handle, creating a new live bounty on The Grill.
+- **Hall of Flame**: Archived museum of legendary past roasts, high-stakes pay-to-clears, and viral comebacks.
+
+---
+
+## 🎨 Design System & Aesthetics
+
+- **Human-Crafted Minimalism**: Built with bespoke Vanilla CSS design tokens. No generic AI templates, no tacky crypto glows, no neon noise.
+- **Light Mode**: Warm natural linen paper (`#F6F5F0`), crisp white cards (`#FFFFFF`), stone borders (`#E5E2DA`), deep ink text (`#191816`), and cayenne ember accents (`#C93B2B`).
+- **Dark Mode**: Understated warm slate (`#141518`), graphite surface cards (`#1E2025`), subtle borders (`#2D3039`), and light typography (`#F4F4F5`).
+- **Zero-Flicker Theme Toggle**: React 19 `useSyncExternalStore` + pre-hydration script with `localStorage` persistence.
+
+---
+
+## 🖼️ Dynamic Shareable Roast Cards
+
+- **Edge OG Generator (`/api/og`)**: Generates custom 1200×630 PNG roast cards on demand using Next.js `ImageResponse`.
+- **Interactive Share Modal**: Roasters and spectators can preview the card, toggle card themes (Warm Paper vs. Warm Slate), download the high-res PNG, or post directly to 𝕏 with one click.
+- **Dynamic Crawler Tags**: Social crawlers (Twitterbot, Discord, Telegram) automatically render rich preview cards when roast links are shared.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **UI Library**: [React 19](https://react.dev/)
+- **Styling**: Vanilla CSS Design Tokens (Responsive, Zero Tailwind dependencies)
+- **Image Generation**: Edge `next/og` (Satori / Yoga WASM)
+- **Audio Effects**: Web Audio API Sound Synthesizer (Zero external audio asset lag)
+- **Icons & Avatars**: SVG Dicebear pixel avatars & standard Unicode emojis
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js 18.17+ or higher
+- npm, pnpm, or yarn
+
+### Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/bountyroast.git
+cd bountyroast
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Run Locally
+```bash
+npm run dev
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Lint & Quality Check
+```bash
+npm run lint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Production Build
+```bash
+npm run build
+npm run start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📄 License
+MIT License © 2026 BountyRoast.lol
