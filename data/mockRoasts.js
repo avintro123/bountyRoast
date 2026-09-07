@@ -33,6 +33,42 @@ export const mockRoasts = [
     defenseText: null,
     isHot: true,
     tags: ["ai", "wrapper", "saas"],
+    comments: [
+      {
+        id: "c-101",
+        author: {
+          handle: "promptmaster",
+          displayName: "Prompt Master",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=promptmaster",
+        },
+        text: "Can confirm, the codebase is literally a 1,000-line system prompt and a Next.js template 😭",
+        createdAt: "2026-09-04T15:10:00Z",
+        likes: 38,
+      },
+      {
+        id: "c-102",
+        author: {
+          handle: "saas_skeptic",
+          displayName: "SaaS Skeptic",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=saasskeptic",
+        },
+        text: "Waiting for them to pay $348 to clear this. The clock is ticking ⏳",
+        createdAt: "2026-09-04T16:30:00Z",
+        likes: 19,
+      },
+      {
+        id: "c-103",
+        author: {
+          handle: "shipcaptainAI",
+          displayName: "Captain Ship",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=shipcaptain",
+        },
+        text: "We crossed $50k ARR this morning while you typed this roast. Keep fueling it! 🚢",
+        createdAt: "2026-09-04T18:00:00Z",
+        likes: 45,
+        isTarget: true,
+      },
+    ],
   },
   {
     id: "roast-002",
@@ -59,6 +95,31 @@ export const mockRoasts = [
       "At least we HAVE users. Your GitHub has 2 stars and one is from your mom.",
     isHot: true,
     tags: ["productivity", "notion", "performance"],
+    comments: [
+      {
+        id: "c-201",
+        author: {
+          handle: "electronhater",
+          displayName: "Electron Hater",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=electron",
+        },
+        text: "I opened their web app and my laptop fan took off into low Earth orbit 🚀",
+        createdAt: "2026-09-04T19:00:00Z",
+        likes: 27,
+      },
+      {
+        id: "c-202",
+        author: {
+          handle: "notionkiller",
+          displayName: "NotionKiller.io",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=notionkiller",
+        },
+        text: "RAM is cheap, our productivity is priceless 😎",
+        createdAt: "2026-09-04T20:15:00Z",
+        likes: 12,
+        isTarget: true,
+      },
+    ],
   },
   {
     id: "roast-003",
@@ -84,6 +145,30 @@ export const mockRoasts = [
     defenseText: null,
     isHot: true,
     tags: ["indie", "vibe-coding", "serial-launcher"],
+    comments: [
+      {
+        id: "c-301",
+        author: {
+          handle: "gitcommitter",
+          displayName: "Git Committer",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=git",
+        },
+        text: "47 apps shipped and all 47 share the same Stripe account with $0 revenue 💀",
+        createdAt: "2026-09-05T09:00:00Z",
+        likes: 31,
+      },
+      {
+        id: "c-302",
+        author: {
+          handle: "solopreneur_life",
+          displayName: "Solo Preneur",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=solopreneur",
+        },
+        text: "The sheer endurance is admirable though. Most people quit after 3 failures 😂",
+        createdAt: "2026-09-05T11:20:00Z",
+        likes: 14,
+      },
+    ],
   },
   {
     id: "roast-004",
@@ -110,6 +195,30 @@ export const mockRoasts = [
     redirectedTo: "cryptomaxi",
     isHot: false,
     tags: ["web3", "crypto", "buzzwords"],
+    comments: [
+      {
+        id: "c-401",
+        author: {
+          handle: "cryptomaxi",
+          displayName: "Crypto Maxi",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=cryptomaxi",
+        },
+        text: "Why did you redirect the flame to ME?! I was minding my own business farming airdrops 😭",
+        createdAt: "2026-09-05T01:10:00Z",
+        likes: 54,
+      },
+      {
+        id: "c-402",
+        author: {
+          handle: "web4fan",
+          displayName: "Future Enjoyer",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=future",
+        },
+        text: "Few understand Web4. By 2030 everyone will use Google Forms on-chain.",
+        createdAt: "2026-09-05T03:40:00Z",
+        likes: 18,
+      },
+    ],
   },
   {
     id: "roast-005",
@@ -135,6 +244,19 @@ export const mockRoasts = [
     defenseText: null,
     isHot: false,
     tags: ["ai", "agents", "hype"],
+    comments: [
+      {
+        id: "c-501",
+        author: {
+          handle: "devopsguy",
+          displayName: "DevOps Guy",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=devops",
+        },
+        text: "Their agent ran an infinite loop and consumed $1,200 of OpenAI credits overnight lmao",
+        createdAt: "2026-09-06T10:00:00Z",
+        likes: 42,
+      },
+    ],
   },
   {
     id: "roast-006",
@@ -161,6 +283,19 @@ export const mockRoasts = [
       "At least I have 50k followers. Your product has 50k lines of code nobody asked for.",
     isHot: false,
     tags: ["build-in-public", "mrr", "vibes"],
+    comments: [
+      {
+        id: "c-601",
+        author: {
+          handle: "vibechecker",
+          displayName: "Vibe Checker",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=vibecheck",
+        },
+        text: "That comeback was legendary though. 50k lines of code hit right in the soul 🎯",
+        createdAt: "2026-09-05T09:30:00Z",
+        likes: 33,
+      },
+    ],
   },
   {
     id: "roast-007",
@@ -187,6 +322,42 @@ export const mockRoasts = [
       "It's called STRATEGY. I'm building anticipation. Google it. Oh wait, you can't because your SEO tool doesn't even rank.",
     isHot: false,
     tags: ["landing-page", "irony", "design"],
+    comments: [
+      {
+        id: "c-701",
+        author: {
+          handle: "devguy",
+          displayName: "Dev Guy",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=devguy",
+        },
+        text: "Coming soon since Q1 2024. Legend says the hero section is still compiling 😭",
+        createdAt: "2026-09-04T20:10:00Z",
+        likes: 24,
+      },
+      {
+        id: "c-702",
+        author: {
+          handle: "uxdesigner",
+          displayName: "UX Designer",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=uxdesigner",
+        },
+        text: "At this rate, Figma 2 will launch before his landing page ships.",
+        createdAt: "2026-09-04T21:00:00Z",
+        likes: 15,
+      },
+      {
+        id: "c-703",
+        author: {
+          handle: "landingpagehero",
+          displayName: "Landing Page Hero",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=landingpage",
+        },
+        text: "Perfection takes time. You can't rush digital Michelangelo 🎨",
+        createdAt: "2026-09-04T22:30:00Z",
+        likes: 31,
+        isTarget: true,
+      },
+    ],
   },
   {
     id: "roast-008",
@@ -212,6 +383,30 @@ export const mockRoasts = [
     defenseText: null,
     isHot: false,
     tags: ["micro-saas", "bootstrapped", "mrr"],
+    comments: [
+      {
+        id: "c-801",
+        author: {
+          handle: "lemonadestand_ceo",
+          displayName: "Lemonade Stand CEO",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=lemonade",
+        },
+        text: "My lemonade stand made $42 last weekend. Where do I send the angel investment deck? 🍋",
+        createdAt: "2026-09-07T08:00:00Z",
+        likes: 19,
+      },
+      {
+        id: "c-802",
+        author: {
+          handle: "bootstrap_baron",
+          displayName: "Bootstrap Baron",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=bootstrap",
+        },
+        text: "Hey, $37 covers the domain renewal... almost.",
+        createdAt: "2026-09-07T08:30:00Z",
+        likes: 8,
+      },
+    ],
   },
   {
     id: "roast-009",
@@ -237,6 +432,19 @@ export const mockRoasts = [
     defenseText: null,
     isHot: false,
     tags: ["pivot", "startup", "adhd"],
+    comments: [
+      {
+        id: "c-901",
+        author: {
+          handle: "compass_user",
+          displayName: "Compass User",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=compass",
+        },
+        text: "He's not pivoting, he's just spinning in an office swivel chair at high velocity 💀",
+        createdAt: "2026-09-06T23:45:00Z",
+        likes: 37,
+      },
+    ],
   },
   {
     id: "roast-010",
@@ -262,6 +470,19 @@ export const mockRoasts = [
     defenseText: null,
     isHot: false,
     tags: ["no-code", "bubble", "scaling"],
+    comments: [
+      {
+        id: "c-1001",
+        author: {
+          handle: "bubble_fan",
+          displayName: "Bubble Fan",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=bubble",
+        },
+        text: "It doesn't crash, it's just 'rate-limiting' our happiness 😭",
+        createdAt: "2026-09-05T14:12:00Z",
+        likes: 22,
+      },
+    ],
   },
   {
     id: "roast-011",
@@ -287,6 +508,19 @@ export const mockRoasts = [
     defenseText: null,
     isHot: false,
     tags: ["twitter", "threads", "engagement"],
+    comments: [
+      {
+        id: "c-1101",
+        author: {
+          handle: "unroll_bot",
+          displayName: "Unroll Bot",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=unroll",
+        },
+        text: "1/30: How I waste 8 hours writing tweets instead of fixing production bugs 🧵",
+        createdAt: "2026-09-07T09:15:00Z",
+        likes: 41,
+      },
+    ],
   },
   {
     id: "roast-012",
@@ -312,6 +546,19 @@ export const mockRoasts = [
     defenseText: null,
     isHot: false,
     tags: ["dark-mode", "features", "minimal"],
+    comments: [
+      {
+        id: "c-1201",
+        author: {
+          handle: "oled_enjoyer",
+          displayName: "OLED Enjoyer",
+          avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=oled",
+        },
+        text: "My OLED screen thanks you, but my productivity is crying in pure black #000000 🖤",
+        createdAt: "2026-09-07T10:30:00Z",
+        likes: 16,
+      },
+    ],
   },
 ];
 

@@ -12,9 +12,17 @@ export function RoastProvider({ children }) {
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          return parsed.map((r) =>
-            r.defenseStatus === "immune" ? { ...r, defenseStatus: "defended" } : r
-          );
+          return parsed.map((r) => {
+            const normalized = r.defenseStatus === "immune" ? { ...r, defenseStatus: "defended" } : r;
+            const seed = initialRoasts.find((ir) => ir.id === r.id);
+            return {
+              ...normalized,
+              comments:
+                Array.isArray(normalized.comments) && normalized.comments.length > 0
+                  ? normalized.comments
+                  : (seed?.comments || []),
+            };
+          });
         } catch {
           return initialRoasts;
         }
@@ -131,6 +139,7 @@ export function RoastProvider({ children }) {
       defenseText: null,
       isHot: newRoast.bountyAmount >= 100,
       tags: [],
+      comments: [],
     };
 
     setRoasts((prev) => [roast, ...prev]);
@@ -150,7 +159,7 @@ export function RoastProvider({ children }) {
     }));
 
     return roast;
-  }, [roasts]);
+  }, []);
 
   const fuelRoast = useCallback((roastId, amount) => {
     setRoasts((prev) => {
@@ -199,32 +208,94 @@ export function RoastProvider({ children }) {
       )
     );
 
-    const roast = roasts.find((r) => r.id === roastId);
-    const handle = roast?.target?.handle || "unknown";
+    setRoasts((current) => {
+      const roast = current.find((r) => r.id === roastId);
+      const handle = roast?.target?.handle || "unknown";
 
-    if (isPayToClear) {
-      setTickerEvents((prev) => [
-        `🛡️ @${handle} PAID TO CLEAR — Roast extinguished and erased from The Grill!`,
-        ...prev,
-      ]);
-    } else if (defenseType === "defended") {
-      setTickerEvents((prev) => [
-        `🎤 @${handle} posted a comeback! Let the internet judge who won.`,
-        ...prev,
-      ]);
-    } else if (defenseType === "redirected") {
-      setTickerEvents((prev) => [
-        `🔄 @${handle} redirected the flame!`,
-        ...prev,
-      ]);
-    }
+      if (isPayToClear) {
+        setTickerEvents((prev) => [
+          `🛡️ @${handle} PAID TO CLEAR — Roast extinguished and erased from The Grill!`,
+          ...prev,
+        ]);
+      } else if (defenseType === "defended") {
+        setTickerEvents((prev) => [
+          `🎤 @${handle} posted a comeback! Let the internet judge who won.`,
+          ...prev,
+        ]);
+      } else if (defenseType === "redirected") {
+        setTickerEvents((prev) => [
+          `🔄 @${handle} redirected the flame!`,
+          ...prev,
+        ]);
+      }
+      return current;
+    });
 
     setStats((prev) => ({
       ...prev,
       defensesThisHour: prev.defensesThisHour + 1,
       activeRoasts: isPayToClear ? Math.max(0, prev.activeRoasts - 1) : prev.activeRoasts,
     }));
-  }, [roasts]);
+  }, []);
+
+  const addComment = useCallback((roastId, { handle = "you", displayName = "You", text, isTarget = false }) => {
+    if (!text || !text.trim()) return null;
+
+    const cleanHandle = (handle || "you").replace(/^@/, "").trim() || "spectator";
+    const commentId = `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const newComment = {
+      id: commentId,
+      author: {
+        handle: cleanHandle,
+        displayName: displayName || cleanHandle,
+        avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${cleanHandle}`,
+      },
+      text: text.trim(),
+      createdAt: new Date().toISOString(),
+      likes: 0,
+      isTarget: Boolean(isTarget),
+    };
+
+    setRoasts((prev) => {
+      const targetRoast = prev.find((r) => r.id === roastId);
+      const targetHandle = targetRoast?.target?.handle || "roast";
+
+      // Add ticker event
+      const previewText = text.trim().slice(0, 35) + (text.length > 35 ? "..." : "");
+      setTickerEvents((tPrev) => [
+        `💬 @${cleanHandle} commented on @${targetHandle}'s roast: "${previewText}"`,
+        ...tPrev,
+      ]);
+
+      return prev.map((r) => {
+        if (r.id === roastId) {
+          const existingComments = Array.isArray(r.comments) ? r.comments : [];
+          return {
+            ...r,
+            comments: [newComment, ...existingComments],
+          };
+        }
+        return r;
+      });
+    });
+
+    return newComment;
+  }, []);
+
+  const likeComment = useCallback((roastId, commentId) => {
+    setRoasts((prev) =>
+      prev.map((r) => {
+        if (r.id !== roastId) return r;
+        const comments = Array.isArray(r.comments) ? r.comments : [];
+        return {
+          ...r,
+          comments: comments.map((c) =>
+            c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c
+          ),
+        };
+      })
+    );
+  }, []);
 
   // Sync state to localStorage whenever it changes
   useEffect(() => {
@@ -246,6 +317,8 @@ export function RoastProvider({ children }) {
         addRoast,
         fuelRoast,
         defendRoast,
+        addComment,
+        likeComment,
       }}
     >
       {children}

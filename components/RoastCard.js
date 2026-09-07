@@ -7,6 +7,7 @@ import { useRoasts } from "@/context/RoastContext";
 import { playFuel } from "@/lib/sounds";
 import CountdownTimer from "./CountdownTimer";
 import ShareCardModal from "./ShareCardModal";
+import RoastComments from "./RoastComments";
 
 function getTimeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -44,6 +45,9 @@ export default function RoastCard({ roast, rank }) {
   const { fuelRoast } = useRoasts();
   const [fueledAnim, setFueledAnim] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+
+  const commentsCount = roast.comments?.length || 0;
 
   const isCleared = roast.defenseStatus === "cleared";
   const isDefended = roast.defenseStatus === "defended";
@@ -72,10 +76,19 @@ export default function RoastCard({ roast, rank }) {
     setShowShareModal(true);
   };
 
+  const handleToggleComments = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowComments((prev) => !prev);
+  };
+
   return (
     <>
       <div className="roast-card-wrapper">
-        <Link href={`/roast/${roast.id}`} className="roast-card">
+        <Link
+          href={`/roast/${roast.id}`}
+          className={`roast-card ${showComments ? "has-comments-open" : ""}`}
+        >
           {/* Floating Fuel Notice */}
           {fueledAnim && (
             <div className="floating-fuel-notice">
@@ -124,6 +137,15 @@ export default function RoastCard({ roast, rank }) {
               <span>{getTimeAgo(roast.createdAt)}</span>
               <span>·</span>
               <span>🔥 {roast.upvotes || 0} upvotes</span>
+              <span>·</span>
+              <button
+                type="button"
+                className="roast-meta-comment-btn"
+                onClick={handleToggleComments}
+                title="Toggle comment section"
+              >
+                💬 {commentsCount} {commentsCount === 1 ? "comment" : "comments"}
+              </button>
               {isActive && roast.expiresAt && (
                 <>
                   <span>·</span>
@@ -141,13 +163,43 @@ export default function RoastCard({ roast, rank }) {
 
             <div className="roast-actions">
               {isCleared ? (
-                <span className="badge badge-cleared">Extinguished</span>
+                <>
+                  <span className="badge badge-cleared">Extinguished</span>
+                  <button
+                    type="button"
+                    className={`btn btn-sm btn-comment-toggle ${showComments ? "btn-comment-active" : "btn-outline"}`}
+                    onClick={handleToggleComments}
+                    title="View comments & reply"
+                  >
+                    💬 {commentsCount}
+                  </button>
+                </>
               ) : isDefended ? (
-                <button className="btn btn-outline btn-sm" onClick={handleShare}>
-                  Share 𝕏
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className={`btn btn-sm btn-comment-toggle ${showComments ? "btn-comment-active" : "btn-outline"}`}
+                    onClick={handleToggleComments}
+                    title="View comments & reply"
+                  >
+                    💬 {commentsCount}
+                  </button>
+                  <button className="btn btn-outline btn-sm" onClick={handleShare}>
+                    Share 𝕏
+                  </button>
+                </>
               ) : isExpired ? (
-                <span className="badge badge-expired">Expired</span>
+                <>
+                  <span className="badge badge-expired">Expired</span>
+                  <button
+                    type="button"
+                    className={`btn btn-sm btn-comment-toggle ${showComments ? "btn-comment-active" : "btn-outline"}`}
+                    onClick={handleToggleComments}
+                    title="View comments & reply"
+                  >
+                    💬 {commentsCount}
+                  </button>
+                </>
               ) : (
                 <>
                   <button
@@ -165,6 +217,14 @@ export default function RoastCard({ roast, rank }) {
                     +1 Fuel
                   </button>
                   <button
+                    type="button"
+                    className={`btn btn-sm btn-comment-toggle ${showComments ? "btn-comment-active" : "btn-outline"}`}
+                    onClick={handleToggleComments}
+                    title="View comments & reply"
+                  >
+                    💬 {commentsCount}
+                  </button>
+                  <button
                     className="btn btn-outline btn-sm"
                     onClick={handleShare}
                     title="Share roast card on 𝕏"
@@ -176,6 +236,19 @@ export default function RoastCard({ roast, rank }) {
             </div>
           </div>
         </Link>
+
+        {/* Expandable Inline Twitter-style Comments Drawer */}
+        {showComments && (
+          <div
+            className="roast-inline-comments-drawer"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <RoastComments roast={roast} isInline={true} />
+          </div>
+        )}
       </div>
 
       <ShareCardModal

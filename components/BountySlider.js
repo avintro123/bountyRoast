@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const spiceLevels = [
-  { min: 5, max: 20, label: "Mild 🌶️" },
+  { min: 1, max: 20, label: "Mild 🌶️" },
   { min: 21, max: 75, label: "Medium 🔥" },
   { min: 76, max: 200, label: "Hot 🔥🔥" },
   { min: 201, max: 500, label: "Inferno 💥" },
@@ -17,7 +17,7 @@ function getSpiceLevel(amount) {
 }
 
 export default function BountySlider({ value, onChange }) {
-  const [amount, setAmount] = useState(value || 5);
+  const [amount, setAmount] = useState(value || 1);
   const spice = getSpiceLevel(amount);
 
   const handleChange = (e) => {
@@ -59,7 +59,7 @@ export default function BountySlider({ value, onChange }) {
 
       <input
         type="range"
-        min="5"
+        min="1"
         max="500"
         step="1"
         value={amount}
@@ -81,7 +81,7 @@ export default function BountySlider({ value, onChange }) {
           marginTop: "8px",
         }}
       >
-        <span>$5</span>
+        <span>$1</span>
         <span>$50</span>
         <span>$150</span>
         <span>$300</span>

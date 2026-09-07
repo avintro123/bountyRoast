@@ -8,6 +8,7 @@ import CountdownTimer from "@/components/CountdownTimer";
 import { triggerConfetti } from "@/components/Confetti";
 import { playFuel } from "@/lib/sounds";
 import ShareCardModal from "@/components/ShareCardModal";
+import RoastComments from "@/components/RoastComments";
 
 function getTimeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -557,6 +558,11 @@ export default function RoastDetailPage({ params }) {
             </button>
           </>
         )}
+      </div>
+
+      {/* Twitter-style Comments Thread */}
+      <div style={{ marginBottom: "36px" }}>
+        <RoastComments roast={roast} isInline={false} />
       </div>
 
       {/* Bounty Timeline */}
