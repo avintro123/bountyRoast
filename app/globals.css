@@ -3,7 +3,7 @@
    Warm Linen Paper · Deep Ink · Cayenne Ember · Human Craft
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500;1,6..72,600&family=JetBrains+Mono:wght@500;600;700&display=swap");
 
 :root {
   /* ── Warm Natural Linen & Paper Palette ── */
@@ -44,9 +44,11 @@
   --status-crimson: #DC2626;
   --status-crimson-subtle: rgba(220, 38, 38, 0.08);
 
-  /* ── Typography Fonts ── */
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* ── Typography Fonts (Artisanal Human Craft) ── */
+  --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-serif: 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* ── Radii & Shadows ── */
   --radius-xs: 6px;
@@ -145,6 +147,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+  font-weight: 700;
+}
+
+blockquote {
+  font-family: var(--font-serif);
+}
+
 ::selection {
   background: var(--accent-cayenne-subtle);
   color: var(--accent-cayenne);
@@ -175,8 +187,10 @@ button, input, textarea, select {
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border-subtle);
   padding: 6px 0;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--text-secondary);
   overflow: hidden;
   white-space: nowrap;
@@ -209,12 +223,13 @@ button, input, textarea, select {
 }
 
 .navbar-brand, .navbar-logo {
+  font-family: var(--font-display);
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
 }
 
@@ -272,13 +287,15 @@ button, input, textarea, select {
 
 /* ── Buttons ── */
 .btn {
+  font-family: var(--font-display);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 8px 18px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   border-radius: var(--radius-full);
   border: 1px solid transparent;
   cursor: pointer;
@@ -346,7 +363,8 @@ button, input, textarea, select {
 }
 
 .hero-title {
-  font-size: clamp(34px, 5vw, 50px);
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5vw, 52px);
   font-weight: 800;
   letter-spacing: -0.035em;
   line-height: 1.15;
@@ -420,8 +438,9 @@ button, input, textarea, select {
 }
 
 .stat-value, .market-stat-num {
+  font-family: var(--font-mono);
   font-size: 20px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -441,6 +460,7 @@ button, input, textarea, select {
 }
 
 .section-title {
+  font-family: var(--font-display);
   font-size: 21px;
   font-weight: 800;
   letter-spacing: -0.025em;
@@ -468,6 +488,7 @@ button, input, textarea, select {
 }
 
 .filter-pill {
+  font-family: var(--font-display);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -476,7 +497,8 @@ button, input, textarea, select {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   color: var(--text-secondary);
   cursor: pointer;
   transition: var(--transition);
@@ -609,6 +631,7 @@ button, input, textarea, select {
 }
 
 .roast-target-handle, .docket-handle {
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
@@ -616,9 +639,12 @@ button, input, textarea, select {
 }
 
 .roast-text, .docket-quote {
-  font-size: 14px;
-  color: var(--text-secondary);
-  line-height: 1.45;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15.5px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  letter-spacing: -0.005em;
 }
 
 /* Comeback Rebuttal Box */
@@ -663,9 +689,10 @@ button, input, textarea, select {
 }
 
 .bounty-amount, .docket-bounty-amount {
+  font-family: var(--font-mono);
   font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   color: var(--accent-cayenne);
 }
 
@@ -677,12 +704,14 @@ button, input, textarea, select {
 
 /* Status Badges */
 .badge {
+  font-family: var(--font-display);
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   border-radius: var(--radius-full);
 }
 
@@ -706,6 +735,8 @@ button, input, textarea, select {
 
 /* Countdown Pill */
 .countdown-pill {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
   display: inline-flex;
   align-items: center;
   gap: 5px;

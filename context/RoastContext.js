@@ -1,53 +1,102 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
-import { mockRoasts as initialRoasts, mockTickerEvents as initialTicker, mockStats as initialStats } from "@/data/mockRoasts";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
+import {
+  mockRoasts as initialRoasts,
+  mockTickerEvents as initialTicker,
+  mockStats as initialStats,
+} from "@/data/mockRoasts";
+import { supabase } from "@/lib/supabase";
+import { fromDbRoast, toDbRoast, toDbComment } from "@/lib/roastMappers";
 
 const RoastContext = createContext(null);
 
 export function RoastProvider({ children }) {
-  const [roasts, setRoasts] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('roasts');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          return parsed.map((r) => {
-            const normalized = r.defenseStatus === "immune" ? { ...r, defenseStatus: "defended" } : r;
-            const seed = initialRoasts.find((ir) => ir.id === r.id);
-            return {
-              ...normalized,
-              comments:
-                Array.isArray(normalized.comments) && normalized.comments.length > 0
-                  ? normalized.comments
-                  : (seed?.comments || []),
-            };
-          });
-        } catch {
-          return initialRoasts;
+  const [roasts, setRoasts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+
+        const { data: dbRoasts, error: roastError } = await supabase
+          .from("roasts")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (roastError) throw roastError;
+
+        // fetch comments from Supabase
+        const { data: dbComments, error: commentsError } = await supabase
+          .from("comments")
+          .select("*")
+          .order("created_at", { ascending: true });
+
+        if (commentsError) throw commentsError;
+
+        // 3. AUTO-SEED: If the database is empty, seed it with starter mock data!
+        if (!dbRoasts || dbRoasts.length === 0) {
+          console.log(
+            "Supabase is empty! Auto-seeding starter roasts into PostgreSQL...",
+          );
+
+          for (const r of initialRoasts) {
+            await supabase.from("roasts").insert(toDbRoast(r));
+            if (r.comments && r.comments.length > 0) {
+              const rows = r.comments.map((c) => toDbComment(c, r.id));
+              await supabase.from("comments").insert(rows);
+            }
+          }
+
+          setRoasts(initialRoasts);
+          setLoading(false);
+          return;
         }
+
+        // Combine roasts with their respective comments
+        const combined = dbRoasts.map((r) => {
+          const matchingComments = (dbComments || []).filter(
+            (c) => c.roast_id === r.id,
+          );
+          return fromDbRoast(r, matchingComments);
+        });
+
+        setRoasts(combined);
+      } catch (err) {
+        console.error("Failed to load data:", err);
+        setRoasts(initialRoasts);
+      } finally {
+        setLoading(false);
       }
-      return initialRoasts;
     }
-    return initialRoasts;
-  });
+    loadData();
+  }, []);
+
   const [tickerEvents, setTickerEvents] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('tickerEvents');
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("tickerEvents");
       return stored ? JSON.parse(stored) : initialTicker;
     }
     return initialTicker;
   });
   const [stats, setStats] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('stats');
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("stats");
       return stored ? JSON.parse(stored) : initialStats;
     }
     return initialStats;
   });
   const [expiredRoasts, setExpiredRoasts] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('expiredRoasts');
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("expiredRoasts");
       return stored ? JSON.parse(stored) : [];
     }
     return [];
@@ -90,7 +139,8 @@ export function RoastProvider({ children }) {
           // Add ticker events for expired roasts
           setTickerEvents((prev) => [
             ...newExpired.map(
-              (r) => `☠️ @${r.target.handle}'s roast EXPIRED — $${r.bountyAmount} bounty forfeited!`
+              (r) =>
+                `☠️ @${r.target.handle}'s roast EXPIRED — $${r.bountyAmount} bounty forfeited!`,
             ),
             ...prev,
           ]);
@@ -114,7 +164,9 @@ export function RoastProvider({ children }) {
     const cleanHandle = (newRoast.handle || "").replace(/^@/, "").trim();
 
     const now = new Date();
-    const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(
+      now.getTime() + 72 * 60 * 60 * 1000,
+    ).toISOString();
 
     const roast = {
       id: `roast-${Date.now()}`,
@@ -143,6 +195,16 @@ export function RoastProvider({ children }) {
     };
 
     setRoasts((prev) => [roast, ...prev]);
+    supabase
+      .from("roasts")
+      .insert(toDbRoast(roast))
+      .then(({ error }) => {
+        if (error) {
+          console.error("Failed to save roast to Supabase:", error.message);
+        } else {
+          console.log("Roast added to database!");
+        }
+      });
 
     // Add ticker event
     setTickerEvents((prev) => [
@@ -165,7 +227,12 @@ export function RoastProvider({ children }) {
     setRoasts((prev) => {
       const target = prev.find((r) => r.id === roastId);
       // Cannot fuel if target is cleared, defended, or expired
-      if (!target || target.defenseStatus === "cleared" || target.defenseStatus === "defended" || target.defenseStatus === "expired") {
+      if (
+        !target ||
+        target.defenseStatus === "cleared" ||
+        target.defenseStatus === "defended" ||
+        target.defenseStatus === "expired"
+      ) {
         return prev;
       }
 
@@ -176,7 +243,7 @@ export function RoastProvider({ children }) {
               bountyAmount: r.bountyAmount + amount,
               spectatorContributions: r.spectatorContributions + amount,
             }
-          : r
+          : r,
       );
     });
 
@@ -204,8 +271,8 @@ export function RoastProvider({ children }) {
               defenseText: defenseText || null,
               isCleared: isPayToClear,
             }
-          : r
-      )
+          : r,
+      ),
     );
 
     setRoasts((current) => {
@@ -234,53 +301,76 @@ export function RoastProvider({ children }) {
     setStats((prev) => ({
       ...prev,
       defensesThisHour: prev.defensesThisHour + 1,
-      activeRoasts: isPayToClear ? Math.max(0, prev.activeRoasts - 1) : prev.activeRoasts,
+      activeRoasts: isPayToClear
+        ? Math.max(0, prev.activeRoasts - 1)
+        : prev.activeRoasts,
     }));
   }, []);
 
-  const addComment = useCallback((roastId, { handle = "you", displayName = "You", text, isTarget = false }) => {
-    if (!text || !text.trim()) return null;
+  const addComment = useCallback(
+    (
+      roastId,
+      { handle = "you", displayName = "You", text, isTarget = false },
+    ) => {
+      if (!text || !text.trim()) return null;
 
-    const cleanHandle = (handle || "you").replace(/^@/, "").trim() || "spectator";
-    const commentId = `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const newComment = {
-      id: commentId,
-      author: {
-        handle: cleanHandle,
-        displayName: displayName || cleanHandle,
-        avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${cleanHandle}`,
-      },
-      text: text.trim(),
-      createdAt: new Date().toISOString(),
-      likes: 0,
-      isTarget: Boolean(isTarget),
-    };
+      const cleanHandle =
+        (handle || "you").replace(/^@/, "").trim() || "spectator";
+      const commentId = `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const newComment = {
+        id: commentId,
+        author: {
+          handle: cleanHandle,
+          displayName: displayName || cleanHandle,
+          avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${cleanHandle}`,
+        },
+        text: text.trim(),
+        createdAt: new Date().toISOString(),
+        likes: 0,
+        isTarget: Boolean(isTarget),
+      };
 
-    setRoasts((prev) => {
-      const targetRoast = prev.find((r) => r.id === roastId);
-      const targetHandle = targetRoast?.target?.handle || "roast";
+      setRoasts((prev) => {
+        const targetRoast = prev.find((r) => r.id === roastId);
+        const targetHandle = targetRoast?.target?.handle || "roast";
 
-      // Add ticker event
-      const previewText = text.trim().slice(0, 35) + (text.length > 35 ? "..." : "");
-      setTickerEvents((tPrev) => [
-        `💬 @${cleanHandle} commented on @${targetHandle}'s roast: "${previewText}"`,
-        ...tPrev,
-      ]);
+        // Add ticker event
+        const previewText =
+          text.trim().slice(0, 435) + (text.length > 35 ? "..." : "");
+        setTickerEvents((tPrev) => [
+          `💬 @${cleanHandle} commented on @${targetHandle}'s roast: "${previewText}"`,
+          ...tPrev,
+        ]);
 
-      return prev.map((r) => {
-        if (r.id === roastId) {
-          const existingComments = Array.isArray(r.comments) ? r.comments : [];
-          return {
-            ...r,
-            comments: [newComment, ...existingComments],
-          };
-        }
-        return r;
+        return prev.map((r) => {
+          if (r.id === roastId) {
+            const existingComments = Array.isArray(r.comments)
+              ? r.comments
+              : [];
+            return {
+              ...r,
+              comments: [newComment, ...existingComments],
+            };
+          }
+          return r;
+        });
       });
-    });
 
-    return newComment;
-  }, []);
+      supabase
+        .from("comments")
+        .insert(toDbComment(newComment, roastId))
+        .then(({ error }) => {
+          if (error) {
+            console.error("Failed to save comment to Supabase:", error.message);
+          } else {
+            console.log("Comment added to database!");
+          }
+        });
+
+      return newComment;
+    },
+    [],
+  );
 
   const likeComment = useCallback((roastId, commentId) => {
     setRoasts((prev) =>
@@ -290,20 +380,20 @@ export function RoastProvider({ children }) {
         return {
           ...r,
           comments: comments.map((c) =>
-            c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c
+            c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c,
           ),
         };
-      })
+      }),
     );
   }, []);
 
   // Sync state to localStorage whenever it changes
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('roasts', JSON.stringify(roasts));
-      localStorage.setItem('tickerEvents', JSON.stringify(tickerEvents));
-      localStorage.setItem('stats', JSON.stringify(stats));
-      localStorage.setItem('expiredRoasts', JSON.stringify(expiredRoasts));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("roasts", JSON.stringify(roasts));
+      localStorage.setItem("tickerEvents", JSON.stringify(tickerEvents));
+      localStorage.setItem("stats", JSON.stringify(stats));
+      localStorage.setItem("expiredRoasts", JSON.stringify(expiredRoasts));
     }
   }, [roasts, tickerEvents, stats, expiredRoasts]);
 
@@ -311,6 +401,7 @@ export function RoastProvider({ children }) {
     <RoastContext.Provider
       value={{
         roasts,
+        loading,
         tickerEvents,
         stats,
         expiredRoasts,

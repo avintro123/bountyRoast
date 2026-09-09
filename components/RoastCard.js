@@ -134,7 +134,7 @@ export default function RoastCard({ roast, rank }) {
             <div className="roast-meta">
               <span>by @{roast.roaster.handle}</span>
               <span>·</span>
-              <span>{getTimeAgo(roast.createdAt)}</span>
+              <span suppressHydrationWarning>{getTimeAgo(roast.createdAt)}</span>
               <span>·</span>
               <span>🔥 {roast.upvotes || 0} upvotes</span>
               <span>·</span>

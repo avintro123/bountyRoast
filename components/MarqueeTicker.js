@@ -11,7 +11,7 @@ export default function MarqueeTicker() {
       <div className="marquee-content">
         {doubled.map((event, i) => (
           <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-            <span>{event}</span>
+            <span suppressHydrationWarning>{event}</span>
             <span style={{ color: "var(--border-strong)", margin: "0 8px" }}>·</span>
           </span>
         ))}
