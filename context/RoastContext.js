@@ -226,7 +226,6 @@ export function RoastProvider({ children }) {
   const fuelRoast = useCallback((roastId, amount) => {
     setRoasts((prev) => {
       const target = prev.find((r) => r.id === roastId);
-      // Cannot fuel if target is cleared, defended, or expired
       if (
         !target ||
         target.defenseStatus === "cleared" ||
@@ -236,12 +235,36 @@ export function RoastProvider({ children }) {
         return prev;
       }
 
+      const newBounty = target.bountyAmount + amount;
+      const newContribution = (target.spectatorContributions || 0) + amount;
+
+      // Send update using the fresh `prev` values!
+      supabase
+        .from("roasts")
+        .update({
+          bounty_amount: newBounty,
+          spectator_contributions: newContribution,
+        })
+        .eq("id", roastId)
+        .then(({ error }) => {
+          if (error) {
+            console.error(
+              "Failed to update bounty in Supabase:",
+              error.message,
+            );
+          } else {
+            console.log(
+              `✅ Supabase: @${target.target.handle} bounty is now $${newBounty}`,
+            );
+          }
+        });
+
       return prev.map((r) =>
         r.id === roastId
           ? {
               ...r,
-              bountyAmount: r.bountyAmount + amount,
-              spectatorContributions: r.spectatorContributions + amount,
+              bountyAmount: newBounty,
+              spectatorContributions: newContribution,
             }
           : r,
       );
@@ -261,6 +284,23 @@ export function RoastProvider({ children }) {
   const defendRoast = useCallback((roastId, defenseType, defenseText) => {
     const isPayToClear = defenseType === "defended" && !defenseText;
     const finalStatus = isPayToClear ? "cleared" : defenseType;
+
+    supabase
+      .from("roasts")
+      .update({
+        defense_status: finalStatus,
+        defense_text: defenseText || null,
+      })
+      .eq("id", roastId)
+      .then(({ error }) => {
+        if (error) {
+          console.error("Failed to update defense in Supabase:", error.message);
+        } else {
+          console.log(
+            `Supabase: Roast ${roastId} status is now ${finalStatus}`,
+          );
+        }
+      });
 
     setRoasts((prev) =>
       prev.map((r) =>
@@ -373,18 +413,43 @@ export function RoastProvider({ children }) {
   );
 
   const likeComment = useCallback((roastId, commentId) => {
+    let newLikesCount = null;
+
     setRoasts((prev) =>
       prev.map((r) => {
         if (r.id !== roastId) return r;
         const comments = Array.isArray(r.comments) ? r.comments : [];
         return {
           ...r,
-          comments: comments.map((c) =>
-            c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c,
-          ),
+          comments: comments.map((c) => {
+            if (c.id === commentId) {
+              newLikesCount = (c.likes || 0) + 1;
+              return { ...c, likes: newLikesCount };
+            }
+            return c;
+          }),
         };
       }),
     );
+
+    if (newLikesCount !== null) {
+      supabase
+        .from("comments")
+        .update({ likes: newLikesCount })
+        .eq("id", commentId)
+        .then(({ error }) => {
+          if (error) {
+            console.error(
+              "Failed to update comment likes in Supabase:",
+              error.message,
+            );
+          } else {
+            console.log(
+              `👍 Supabase: Comment ${commentId} likes updated to ${newLikesCount}`,
+            );
+          }
+        });
+    }
   }, []);
 
   // Sync state to localStorage whenever it changes
