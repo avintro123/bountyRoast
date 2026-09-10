@@ -542,26 +542,18 @@ export function RoastProvider({ children }) {
   );
 
   const likeComment = useCallback((roastId, commentId) => {
-    let newLikesCount = null;
+    setRoasts((prev) => {
+      const targetRoast = prev.find((r) => r.id === roastId);
+      if (!targetRoast) return prev;
 
-    setRoasts((prev) =>
-      prev.map((r) => {
-        if (r.id !== roastId) return r;
-        const comments = Array.isArray(r.comments) ? r.comments : [];
-        return {
-          ...r,
-          comments: comments.map((c) => {
-            if (c.id === commentId) {
-              newLikesCount = (c.likes || 0) + 1;
-              return { ...c, likes: newLikesCount };
-            }
-            return c;
-          }),
-        };
-      }),
-    );
+      const targetComment = (targetRoast.comments || []).find(
+        (c) => c.id === commentId,
+      );
+      if (!targetComment) return prev;
 
-    if (newLikesCount !== null) {
+      const newLikesCount = Number(targetComment.likes || 0) + 1;
+
+      // Update Supabase in the background to trigger PostgreSQL CDC WebSocket broadcast
       supabase
         .from("comments")
         .update({ likes: newLikesCount })
@@ -578,7 +570,18 @@ export function RoastProvider({ children }) {
             );
           }
         });
-    }
+
+      return prev.map((r) => {
+        if (r.id !== roastId) return r;
+        const comments = Array.isArray(r.comments) ? r.comments : [];
+        return {
+          ...r,
+          comments: comments.map((c) =>
+            c.id === commentId ? { ...c, likes: newLikesCount } : c,
+          ),
+        };
+      });
+    });
   }, []);
 
   // Sync state to localStorage whenever it changes
