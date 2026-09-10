@@ -6,16 +6,19 @@ import { useRoasts } from "@/context/RoastContext";
 export default function NotificationBell() {
   const { tickerEvents } = useRoasts();
   const [isOpen, setIsOpen] = useState(false);
-  const [lastSeenCount, setLastSeenCount] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("bellLastSeen");
-      if (stored) return parseInt(stored, 10);
-    }
-    return 0;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [lastSeenCount, setLastSeenCount] = useState(0);
   const dropdownRef = useRef(null);
 
-  const unreadCount = Math.max(0, tickerEvents.length - lastSeenCount);
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const stored = localStorage.getItem("bellLastSeen");
+      if (stored) setLastSeenCount(parseInt(stored, 10));
+    } catch (e) {}
+  }, []);
+
+  const unreadCount = mounted ? Math.max(0, tickerEvents.length - lastSeenCount) : 0;
 
   // Close dropdown when clicking outside
   useEffect(() => {

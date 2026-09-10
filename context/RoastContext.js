@@ -14,7 +14,12 @@ import {
   mockStats as initialStats,
 } from "@/data/mockRoasts";
 import { supabase } from "@/lib/supabase";
-import { fromDbRoast, toDbRoast, toDbComment } from "@/lib/roastMappers";
+import {
+  fromDbRoast,
+  toDbRoast,
+  toDbComment,
+  fromDbComment,
+} from "@/lib/roastMappers";
 
 const RoastContext = createContext(null);
 
@@ -80,27 +85,151 @@ export function RoastProvider({ children }) {
     loadData();
   }, []);
 
-  const [tickerEvents, setTickerEvents] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("tickerEvents");
-      return stored ? JSON.parse(stored) : initialTicker;
+  // Live Realtime WebSocket listener
+  useEffect(() => {
+    // Unique channel per client tab prevents Phoenix topic collision/closing issues
+    const topic = `feed-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase
+      .channel(topic)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "roasts" },
+        (payload) => {
+          console.log(
+            "🔥 Realtime Roast event received: ",
+            payload.eventType,
+            payload,
+          );
+          if (payload.eventType === "INSERT") {
+            // New roast created by someone else!
+            const newRoast = fromDbRoast(payload.new, []);
+            setRoasts((prev) => {
+              if (prev.some((r) => r.id === newRoast.id)) return prev;
+              return [newRoast, ...prev];
+            });
+            setTickerEvents((prev) => [
+              `🔥 @${newRoast.target.handle} just got roasted for $${newRoast.bountyAmount}`,
+              ...prev,
+            ]);
+            setStats((prev) => ({
+              ...prev,
+              activeRoasts: prev.activeRoasts + 1,
+              totalBounties: prev.totalBounties + newRoast.bountyAmount,
+              roastsToday: prev.roastsToday + 1,
+            }));
+          } else if (payload.eventType === "UPDATE") {
+            // Roast was fueled, defended, or expired!
+            setRoasts((prev) =>
+              prev.map((r) => {
+                if (r.id !== payload.new.id) return r;
+                return {
+                  ...r,
+                  bountyAmount: Number(payload.new.bounty_amount),
+                  spectatorContributions: Number(
+                    payload.new.spectator_contributions || 0,
+                  ),
+                  defenseStatus: payload.new.defense_status,
+                  defenseText: payload.new.defense_text || null,
+                };
+              }),
+            );
+          } else if (payload.eventType === "DELETE") {
+            setRoasts((prev) => prev.filter((r) => r.id !== payload.old?.id));
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comments" },
+        (payload) => {
+          console.log(
+            "💬 Realtime comment event received: ",
+            payload.eventType,
+            payload,
+          );
+
+          if (payload.eventType === "INSERT") {
+            const newComment = fromDbComment(payload.new);
+            const roastId = payload.new.roast_id;
+
+            setRoasts((prev) =>
+              prev.map((r) => {
+                if (r.id !== roastId) return r;
+                const existing = Array.isArray(r.comments) ? r.comments : [];
+                // Idempotency: don't duplicate if already added locally
+                if (existing.some((c) => c.id === newComment.id)) return r;
+                return { ...r, comments: [newComment, ...existing] };
+              }),
+            );
+
+            // Live ticker update for all windows
+            const preview =
+              (newComment.text || "").slice(0, 35) +
+              (newComment.text?.length > 35 ? "..." : "");
+            setTickerEvents((prev) => [
+              `💬 @${newComment.author?.handle || "spectator"} commented: "${preview}"`,
+              ...prev,
+            ]);
+          } else if (payload.eventType === "UPDATE") {
+            const updatedComment = fromDbComment(payload.new);
+            const roastId = payload.new.roast_id;
+
+            setRoasts((prev) =>
+              prev.map((r) => {
+                const hasComment = (r.comments || []).some(
+                  (c) => c.id === updatedComment.id,
+                );
+                if (r.id !== roastId && !hasComment) return r;
+                return {
+                  ...r,
+                  comments: (r.comments || []).map((c) =>
+                    c.id === updatedComment.id
+                      ? { ...c, likes: updatedComment.likes }
+                      : c,
+                  ),
+                };
+              }),
+            );
+          } else if (payload.eventType === "DELETE") {
+            setRoasts((prev) =>
+              prev.map((r) => ({
+                ...r,
+                comments: (r.comments || []).filter(
+                  (c) => c.id !== payload.old?.id,
+                ),
+              })),
+            );
+          }
+        },
+      )
+      .subscribe((status, err) => {
+        console.log(`📡 Supabase Realtime [${topic}] status:`, status);
+        if (err) console.error("Supabase Realtime subscription error:", err);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Initialize with server-friendly defaults to prevent SSR hydration errors
+  const [tickerEvents, setTickerEvents] = useState(initialTicker);
+  const [stats, setStats] = useState(initialStats);
+  const [expiredRoasts, setExpiredRoasts] = useState([]);
+
+  // Load client localStorage only after component mounts on client
+  useEffect(() => {
+    try {
+      const storedTicker = localStorage.getItem("tickerEvents");
+      if (storedTicker) setTickerEvents(JSON.parse(storedTicker));
+      const storedStats = localStorage.getItem("stats");
+      if (storedStats) setStats(JSON.parse(storedStats));
+      const storedExpired = localStorage.getItem("expiredRoasts");
+      if (storedExpired) setExpiredRoasts(JSON.parse(storedExpired));
+    } catch (e) {
+      console.warn("Could not read localStorage:", e);
     }
-    return initialTicker;
-  });
-  const [stats, setStats] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("stats");
-      return stored ? JSON.parse(stored) : initialStats;
-    }
-    return initialStats;
-  });
-  const [expiredRoasts, setExpiredRoasts] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("expiredRoasts");
-      return stored ? JSON.parse(stored) : [];
-    }
-    return [];
-  });
+  }, []);
 
   const expiryCheckRef = useRef(null);
 

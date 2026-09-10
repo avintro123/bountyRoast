@@ -73,7 +73,9 @@ export default function RoastComments({ roast, isInline = false }) {
   const handleCopyQuote = (comment, e) => {
     e.preventDefault();
     e.stopPropagation();
-    const quote = `"${comment.text}" — @${comment.author.handle} on @${roast.target.handle}'s roast (bountyroast.lol)`;
+    const targetHandle = roast?.target?.handle || "target";
+    const authorHandle = comment?.author?.handle || "spectator";
+    const quote = `"${comment.text}" — @${authorHandle} on @${targetHandle}'s roast (bountyroast.lol)`;
     if (navigator.clipboard) {
       navigator.clipboard.writeText(quote).then(() => {
         setCopiedId(comment.id);
@@ -97,7 +99,7 @@ export default function RoastComments({ roast, isInline = false }) {
           </span>
         </div>
         <span className="roast-comments-subtitle">
-          Replying to <strong className="reply-target-tag">@{roast.target.handle}</strong>
+          Replying to <strong className="reply-target-tag">@{roast?.target?.handle || "target"}</strong>
         </span>
       </div>
 
@@ -199,11 +201,22 @@ export default function RoastComments({ roast, isInline = false }) {
         ) : (
           comments.map((comment, index) => {
             const isLiked = Boolean(likedMap[comment.id]);
+            const commentHandle = (comment?.author?.handle || "").toLowerCase();
+            const targetHandle = (roast?.target?.handle || "").toLowerCase();
+            const roasterHandle = (roast?.roaster?.handle || "").toLowerCase();
+
             const isTargetAuthor =
-              comment.isTarget ||
-              comment.author.handle.toLowerCase() === roast.target.handle.toLowerCase();
+              Boolean(comment.isTarget) ||
+              (Boolean(commentHandle) && Boolean(targetHandle) && commentHandle === targetHandle);
             const isRoasterAuthor =
-              comment.author.handle.toLowerCase() === roast.roaster.handle.toLowerCase();
+              Boolean(commentHandle) && Boolean(roasterHandle) && commentHandle === roasterHandle;
+
+            const authorName =
+              comment?.author?.displayName || comment?.author?.handle || "Spectator";
+            const authorHandleDisplay = comment?.author?.handle || "spectator";
+            const authorAvatar =
+              comment?.author?.avatar ||
+              `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${authorHandleDisplay}`;
 
             return (
               <div key={comment.id || index} className="roast-comment-item">
@@ -213,11 +226,8 @@ export default function RoastComments({ roast, isInline = false }) {
                 {/* Commenter Avatar */}
                 <div className="roast-comment-avatar">
                   <img
-                    src={
-                      comment.author.avatar ||
-                      `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${comment.author.handle}`
-                    }
-                    alt={comment.author.displayName || comment.author.handle}
+                    src={authorAvatar}
+                    alt={authorName}
                   />
                 </div>
 
@@ -225,10 +235,10 @@ export default function RoastComments({ roast, isInline = false }) {
                 <div className="roast-comment-body">
                   <div className="roast-comment-meta">
                     <span className="roast-comment-name">
-                      {comment.author.displayName || comment.author.handle}
+                      {authorName}
                     </span>
                     <span className="roast-comment-handle">
-                      @{comment.author.handle}
+                      @{authorHandleDisplay}
                     </span>
 
                     {/* Role Badges */}
