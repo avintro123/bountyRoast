@@ -353,51 +353,32 @@ export function RoastProvider({ children }) {
   }, []);
 
   const fuelRoast = useCallback((roastId, amount) => {
+    // Optimistic UI: Update current screen immediately so the UI doesn't lag
     setRoasts((prev) => {
-      const target = prev.find((r) => r.id === roastId);
-      if (
-        !target ||
-        target.defenseStatus === "cleared" ||
-        target.defenseStatus === "defended" ||
-        target.defenseStatus === "expired"
-      ) {
-        return prev;
-      }
-
-      const newBounty = target.bountyAmount + amount;
-      const newContribution = (target.spectatorContributions || 0) + amount;
-
-      // Send update using the fresh `prev` values!
-      supabase
-        .from("roasts")
-        .update({
-          bounty_amount: newBounty,
-          spectator_contributions: newContribution,
-        })
-        .eq("id", roastId)
-        .then(({ error }) => {
-          if (error) {
-            console.error(
-              "Failed to update bounty in Supabase:",
-              error.message,
-            );
-          } else {
-            console.log(
-              `✅ Supabase: @${target.target.handle} bounty is now $${newBounty}`,
-            );
-          }
-        });
-
-      return prev.map((r) =>
+      prev.map((r) => {
         r.id === roastId
           ? {
               ...r,
-              bountyAmount: newBounty,
-              spectatorContributions: newContribution,
+              bountyAmount: r.bountyAmount + amount,
+              spectatorContributions:(r.spectatorContributions||0) + amount,
             }
-          : r,
-      );
+          : r;
+      });
     });
+
+    // atomic Database RPC: Tells Postgres to do the addition server-side
+    supabase
+     .rpc("increment_bounty",{
+      p_rost_id:roastId,
+      p_amount:amount,
+     })
+     .then(({data,error})=>{
+      if(error){
+        console.error("Failed atomic bounty increment:", error.message);
+      } else {
+        console.log("Atomic bounty updated in DB: ",data);
+      }
+     });
 
     setTickerEvents((prev) => [
       `💰 Spectator fueled +$${amount} on a bounty!`,
@@ -542,46 +523,31 @@ export function RoastProvider({ children }) {
   );
 
   const likeComment = useCallback((roastId, commentId) => {
-    setRoasts((prev) => {
-      const targetRoast = prev.find((r) => r.id === roastId);
-      if (!targetRoast) return prev;
-
-      const targetComment = (targetRoast.comments || []).find(
-        (c) => c.id === commentId,
-      );
-      if (!targetComment) return prev;
-
-      const newLikesCount = Number(targetComment.likes || 0) + 1;
-
-      // Update Supabase in the background to trigger PostgreSQL CDC WebSocket broadcast
-      supabase
-        .from("comments")
-        .update({ likes: newLikesCount })
-        .eq("id", commentId)
-        .then(({ error }) => {
-          if (error) {
-            console.error(
-              "Failed to update comment likes in Supabase:",
-              error.message,
-            );
-          } else {
-            console.log(
-              `👍 Supabase: Comment ${commentId} likes updated to ${newLikesCount}`,
-            );
-          }
-        });
-
-      return prev.map((r) => {
+    // 1. Optimistic UI: Heart turns red and count goes up instantly for this user
+    setRoasts((prev) =>
+      prev.map((r) => {
         if (r.id !== roastId) return r;
-        const comments = Array.isArray(r.comments) ? r.comments : [];
         return {
           ...r,
-          comments: comments.map((c) =>
-            c.id === commentId ? { ...c, likes: newLikesCount } : c,
+          comments: (r.comments || []).map((c) =>
+            c.id === commentId ? { ...c, likes: (c.likes || 0) + 1 } : c,
           ),
         };
+      }),
+    );
+
+    // 2. Atomic Database RPC: Postgres increments `likes = likes + 1` safely
+    supabase
+      .rpc("increment_comment_likes", {
+        p_comment_id: commentId,
+      })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed to update likes in Supabase:", error.message);
+        } else {
+          console.log("Atomic comment like updated in DB:", data);
+        }
       });
-    });
   }, []);
 
   // Sync state to localStorage whenever it changes
