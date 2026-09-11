@@ -354,31 +354,31 @@ export function RoastProvider({ children }) {
 
   const fuelRoast = useCallback((roastId, amount) => {
     // Optimistic UI: Update current screen immediately so the UI doesn't lag
-    setRoasts((prev) => {
-      prev.map((r) => {
+    setRoasts((prev) =>
+      prev.map((r) =>
         r.id === roastId
           ? {
               ...r,
               bountyAmount: r.bountyAmount + amount,
-              spectatorContributions:(r.spectatorContributions||0) + amount,
+              spectatorContributions: (r.spectatorContributions || 0) + amount,
             }
-          : r;
-      });
-    });
+          : r,
+      ),
+    );
 
-    // atomic Database RPC: Tells Postgres to do the addition server-side
+    // Atomic Database RPC: Tells Postgres to do the addition server-side
     supabase
-     .rpc("increment_bounty",{
-      p_rost_id:roastId,
-      p_amount:amount,
-     })
-     .then(({data,error})=>{
-      if(error){
-        console.error("Failed atomic bounty increment:", error.message);
-      } else {
-        console.log("Atomic bounty updated in DB: ",data);
-      }
-     });
+      .rpc("increment_bounty", {
+        p_roast_id: roastId,
+        p_amount: amount,
+      })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed atomic bounty increment:", error.message);
+        } else {
+          console.log("Atomic bounty updated in DB:", data);
+        }
+      });
 
     setTickerEvents((prev) => [
       `💰 Spectator fueled +$${amount} on a bounty!`,
