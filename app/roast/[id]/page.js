@@ -9,6 +9,7 @@ import { triggerConfetti } from "@/components/Confetti";
 import { playFuel } from "@/lib/sounds";
 import ShareCardModal from "@/components/ShareCardModal";
 import RoastComments from "@/components/RoastComments";
+import SpectatorBadge from "@/components/SpectatorBadge";
 
 function getTimeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -37,7 +38,7 @@ const mockTimeline = [
 
 export default function RoastDetailPage({ params }) {
   const { id } = use(params);
-  const { roasts, fuelRoast } = useRoasts();
+  const { roasts, fuelRoast, loading } = useRoasts();
   const roast = roasts.find((r) => r.id === id);
 
   const [reactions, setReactions] = useState([
@@ -49,6 +50,30 @@ export default function RoastDetailPage({ params }) {
   ]);
   const [fuelNotice, setFuelNotice] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+
+  if (loading) {
+    return (
+      <div
+        className="container"
+        style={{ textAlign: "center", padding: "120px 0" }}
+      >
+        <div style={{ fontSize: "40px", marginBottom: "16px" }}>🔥</div>
+        <h2
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            marginBottom: "8px",
+          }}
+        >
+          Firing up the grill...
+        </h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+          Loading roast telemetry & live spectators...
+        </p>
+      </div>
+    );
+  }
 
   if (!roast) {
     return (
@@ -180,6 +205,7 @@ export default function RoastDetailPage({ params }) {
                 >
                   #{rank} on Grill
                 </span>
+                <SpectatorBadge roastId={roast.id} />
               </div>
               <p
                 style={{

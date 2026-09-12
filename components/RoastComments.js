@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRoasts } from "@/context/RoastContext";
+import SpectatorBadge from "@/components/SpectatorBadge";
 
 function getTimeAgo(dateStr) {
   if (!dateStr) return "just now";
@@ -97,6 +98,7 @@ export default function RoastComments({ roast, isInline = false }) {
           <span className="roast-comments-count-pill">
             {comments.length}
           </span>
+          {roast?.id && <SpectatorBadge roastId={roast.id} compact />}
         </div>
         <span className="roast-comments-subtitle">
           Replying to <strong className="reply-target-tag">@{roast?.target?.handle || "target"}</strong>

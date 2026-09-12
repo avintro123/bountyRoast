@@ -10,7 +10,7 @@ import { playDefend, playRedirect } from "@/lib/sounds";
 
 export default function DefendPage({ params }) {
   const { id } = use(params);
-  const { roasts, defendRoast, addRoast } = useRoasts();
+  const { roasts, defendRoast, addRoast, loading } = useRoasts();
   const roast = roasts.find((r) => r.id === id);
   const [selectedOption, setSelectedOption] = useState(() => {
     if (typeof window !== "undefined") {
@@ -30,6 +30,30 @@ export default function DefendPage({ params }) {
   });
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectedRoastId, setRedirectedRoastId] = useState(null);
+
+  if (loading) {
+    return (
+      <div
+        className="container"
+        style={{ textAlign: "center", padding: "120px 0" }}
+      >
+        <div style={{ fontSize: "40px", marginBottom: "16px" }}>🛡️</div>
+        <h2
+          style={{
+            fontSize: "20px",
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            marginBottom: "8px",
+          }}
+        >
+          Loading defense chamber...
+        </h2>
+        <p style={{ color: "var(--text-secondary)", fontSize: "14px" }}>
+          Retrieving bounty status and founder immunity...
+        </p>
+      </div>
+    );
+  }
 
   if (!roast) {
     return (

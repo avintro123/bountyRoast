@@ -24,14 +24,12 @@ import {
 const RoastContext = createContext(null);
 
 export function RoastProvider({ children }) {
-  const [roasts, setRoasts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [roasts, setRoasts] = useState(initialRoasts);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     async function loadData() {
       try {
-        setLoading(true);
-
         const { data: dbRoasts, error: roastError } = await supabase
           .from("roasts")
           .select("*")
