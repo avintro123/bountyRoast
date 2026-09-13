@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRoasts } from "@/context/RoastContext";
 import HealthBar from "@/components/HealthBar";
@@ -50,6 +50,21 @@ export default function RoastDetailPage({ params }) {
   ]);
   const [fuelNotice, setFuelNotice] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isFuelingLoading, setIsFuelingLoading] = useState(false);
+
+  // Check for successful payment return from Stripe
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get("payment") === "success") {
+        const amt = urlParams.get("amount") || "5";
+        triggerConfetti("fire");
+        playFuel();
+        setFuelNotice(`Payment verified! +$${amt} fueled to the fire 🔥`);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -119,14 +134,40 @@ export default function RoastDetailPage({ params }) {
     );
   };
 
-  const handleFuel = (amount) => {
-    fuelRoast(roast.id, amount);
-    playFuel();
-    if (amount >= 25) {
-      triggerConfetti("fire");
+  const handleFuel = async (amount) => {
+    try {
+      setIsFuelingLoading(true);
+      playFuel();
+      setFuelNotice(`Launching Stripe Checkout...`);
+
+      // 1. Ask our backend for a real Stripe Checkout Session
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roastId: roast.id,
+          targetHandle: roast.target.handle,
+          amount,
+          action: "fuel",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        // 2. Redirect user's browser to the official Stripe hosted checkout page!
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+    } catch (err) {
+      console.warn("Stripe redirect failed, applying local fallback:", err);
+      // Fallback: apply optimistic fuel locally if network error
+      fuelRoast(roast.id, amount);
+      if (amount >= 25) triggerConfetti("fire");
+      setFuelNotice(`+$${amount} added! 🔥`);
+      setTimeout(() => setFuelNotice(null), 1800);
+      setIsFuelingLoading(false);
     }
-    setFuelNotice(`+$${amount} added! 🔥`);
-    setTimeout(() => setFuelNotice(null), 1800);
   };
 
   const handleShareClick = () => {
@@ -503,18 +544,21 @@ export default function RoastDetailPage({ params }) {
           >
             <button
               className="btn btn-outline btn-sm"
+              disabled={isFuelingLoading}
               onClick={() => handleFuel(1)}
             >
               +$1 Fuel
             </button>
             <button
               className="btn btn-outline btn-sm"
+              disabled={isFuelingLoading}
               onClick={() => handleFuel(5)}
             >
               +$5 Fuel
             </button>
             <button
               className="btn btn-coral btn-sm"
+              disabled={isFuelingLoading}
               onClick={() => handleFuel(25)}
             >
               +$25 Flame Boost
