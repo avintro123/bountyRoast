@@ -77,6 +77,40 @@ export async function POST(req) {
       }
 
       console.log(`✅ Roast ${roastId} cleared in PostgreSQL via Stripe`);
+    } else if (action === "drop") {
+      // Deploy brand new roast into Supabase
+      const targetHandle = (metadata.targetHandle || "founder").replace(/^@/, "").trim();
+      const roastText = metadata.roastText || "Put on The Grill via BountyRoast.";
+      const newRoastId = roastId || `roast-${Date.now()}`;
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 72 * 60 * 60 * 1000).toISOString();
+
+      const newRoastRow = {
+        id: newRoastId,
+        target_handle: targetHandle,
+        target_name: targetHandle,
+        target_avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${targetHandle}`,
+        roast_text: roastText,
+        bounty_amount: amount,
+        roaster_handle: "you",
+        roaster_name: "You",
+        roaster_avatar: "https://api.dicebear.com/9.x/bottts-neutral/svg?seed=you",
+        defense_status: "none",
+        defense_text: null,
+        upvotes: 0,
+        spectator_contributions: 0,
+        created_at: now.toISOString(),
+        expires_at: expiresAt,
+      };
+
+      const { error } = await supabase.from("roasts").insert(newRoastRow);
+
+      if (error) {
+        console.error("❌ Failed to insert dropped roast via Stripe webhook:", error.message);
+        return NextResponse.json({ error: "Database insert failed" }, { status: 500 });
+      }
+
+      console.log(`✅ Dropped roast ${newRoastId} inserted in PostgreSQL via Stripe webhook!`);
     }
   }
 

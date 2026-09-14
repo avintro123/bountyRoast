@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRoasts } from "@/context/RoastContext";
 import { shareDroppedRoast } from "@/lib/share";
 import BountySlider from "@/components/BountySlider";
 import PopupModal from "@/components/PopupModal";
+import { triggerConfetti } from "@/components/Confetti";
+import { playFuel } from "@/lib/sounds";
 
 const CHAR_LIMIT = 140;
 
@@ -20,6 +22,51 @@ export default function DropRoastPage() {
   const [showPreview, setShowPreview] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [submittedRoast, setSubmittedRoast] = useState(null);
+  const [isDeploying, setIsDeploying] = useState(false);
+  const [deployError, setDeployError] = useState(null);
+
+  // Restore roast details and trigger celebration when returning from Stripe
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("payment_success") === "drop") {
+        let savedHandle = q.get("handle") || "";
+        let savedBounty = Number(q.get("amount")) || 5;
+        let savedText = "";
+        const rId = q.get("roast_id") || `roast-${Date.now()}`;
+
+        try {
+          const raw = sessionStorage.getItem("bountyroast_pending_drop");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.handle) savedHandle = parsed.handle;
+            if (parsed.roastText) savedText = parsed.roastText;
+            if (parsed.bountyAmount) savedBounty = parsed.bountyAmount;
+            sessionStorage.removeItem("bountyroast_pending_drop");
+          }
+        } catch (e) {
+          console.warn("Could not read pending drop from sessionStorage:", e);
+        }
+
+        setHandle(savedHandle);
+        setRoastText(savedText);
+        setBountyAmount(savedBounty);
+
+        const newRoast = addRoast({
+          handle: savedHandle,
+          roastText: savedText || "Placed on The Grill.",
+          bountyAmount: savedBounty,
+        });
+
+        setSubmittedRoast(newRoast || { id: rId, handle: savedHandle, bountyAmount: savedBounty });
+        setShowSuccess(true);
+        triggerConfetti("fire");
+        playFuel();
+
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [addRoast]);
 
   const charCount = roastText.length;
   const isValid =
@@ -27,15 +74,47 @@ export default function DropRoastPage() {
     roastText.trim().length > 0 &&
     roastText.length <= CHAR_LIMIT;
 
-  const handleSubmit = () => {
-    setShowPreview(false);
-    const newRoast = addRoast({
-      handle: handle.replace(/^@/, "").trim(),
-      roastText: roastText.trim(),
-      bountyAmount,
-    });
-    setSubmittedRoast(newRoast);
-    setShowSuccess(true);
+  const handleSubmit = async () => {
+    const cleanHandle = handle.replace(/^@/, "").trim();
+    const cleanText = roastText.trim();
+
+    try {
+      setIsDeploying(true);
+      setDeployError(null);
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          "bountyroast_pending_drop",
+          JSON.stringify({
+            handle: cleanHandle,
+            roastText: cleanText,
+            bountyAmount,
+          }),
+        );
+      }
+
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetHandle: cleanHandle,
+          roastText: cleanText,
+          amount: bountyAmount,
+          action: "drop",
+        }),
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to create checkout session");
+      }
+    } catch (err) {
+      console.error("Drop checkout failed:", err);
+      setDeployError(err.message);
+      setIsDeploying(false);
+    }
   };
 
   if (showSuccess) {
@@ -601,6 +680,7 @@ export default function DropRoastPage() {
             <button
               className="btn btn-outline"
               onClick={() => setShowPreview(false)}
+              disabled={isDeploying}
             >
               Edit
             </button>
@@ -608,10 +688,25 @@ export default function DropRoastPage() {
               className="btn btn-coral"
               style={{ flex: 1 }}
               onClick={handleSubmit}
+              disabled={isDeploying}
             >
-              Confirm & Deploy (${bountyAmount})
+              {isDeploying
+                ? "Redirecting to Stripe..."
+                : `Confirm & Deploy ($${bountyAmount})`}
             </button>
           </div>
+          {deployError && (
+            <p
+              style={{
+                color: "var(--accent-coral)",
+                fontSize: "12px",
+                marginTop: "12px",
+                textAlign: "center",
+              }}
+            >
+              {deployError}
+            </p>
+          )}
         </div>
       </PopupModal>
     </div>
