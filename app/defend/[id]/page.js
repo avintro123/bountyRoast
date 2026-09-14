@@ -31,6 +31,30 @@ export default function DefendPage({ params }) {
   const [showSuccess, setShowSuccess] = useState(false);
   const [redirectedRoastId, setRedirectedRoastId] = useState(null);
 
+  const [isClearing, setIsClearing] = useState(false);
+  const [clearError, setClearError] = useState(null);
+
+  // Detect return from Stripe Checkout after successful "Pay to Clear"
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const q = new URLSearchParams(window.location.search);
+
+      if (q.get("payment_success") === "clear") {
+        setSelectedOption("clear");
+        setShowSuccess(true);
+        playDefend();
+        triggerConfetti("defense");
+
+        // clean URL query parameters
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname,
+        );
+      }
+    }
+  }, []);
+
   if (loading) {
     return (
       <div
@@ -90,14 +114,43 @@ export default function DefendPage({ params }) {
 
   const clearCost = roast.bountyAmount + 1;
 
-  const handleDefend = () => {
-    setShowModal(false);
-
+  const handleDefend = async () => {
+    // Pay to Clear via Stripe Checkout
     if (selectedOption === "clear") {
-      defendRoast(roast.id, "defended", null);
-      playDefend();
-      triggerConfetti("defense");
-    } else if (selectedOption === "comeback") {
+      try {
+        setIsClearing(true);
+        setClearError(null);
+
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            roastId: roast.id,
+            targetHandle: roast.target.handle,
+            amount: clearCost,
+            action: "clear",
+          }),
+        });
+
+        const data = await res.json();
+        if (data.url) {
+          // / Redirect founder to Stripe's hosted payment page
+          window.location.href = data.url;
+        } else {
+          throw new Error(data.error || "failed to create checkout session");
+        }
+      } catch (err) {
+        setClearError(err.message);
+        setIsClearing(false);
+      }
+      return;
+    }
+
+    // Option 2 & Option 3 (Comeback and Redirect remain free & local)
+    setShowModal(false);
+    if (selectedOption === "comeback") {
       defendRoast(roast.id, "defended", comebackText);
       playDefend();
       triggerConfetti("defense");
@@ -116,7 +169,6 @@ export default function DefendPage({ params }) {
       playRedirect();
       triggerConfetti("fire");
     }
-
     setShowSuccess(true);
   };
 
@@ -523,9 +575,23 @@ export default function DefendPage({ params }) {
           <button
             className="btn btn-coral btn-lg btn-block"
             onClick={handleDefend}
+            disabled={isClearing}
           >
-            Confirm & Clear Roast
+            {isClearing
+              ? "Redirecting to Stripe..."
+              : `Confirm & Pay $${clearCost} to Clear`}
           </button>
+          {clearError && (
+            <p
+              style={{
+                color: "var(--accent-coral)",
+                fontSize: "12px",
+                marginTop: "10px",
+              }}
+            >
+              {clearError}
+            </p>
+          )}
         </div>
       </PopupModal>
 
