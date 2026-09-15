@@ -7,11 +7,14 @@ import { shareDefense } from "@/lib/share";
 import PopupModal from "@/components/PopupModal";
 import { triggerConfetti } from "@/components/Confetti";
 import { playDefend, playRedirect } from "@/lib/sounds";
+import { useAuth } from "@/context/AuthContext";
 
 export default function DefendPage({ params }) {
   const { id } = use(params);
   const { roasts, defendRoast, addRoast, loading } = useRoasts();
+  const { twitterHandle, isVerifiedFounder, signInWithTwitter, devLoginAs } = useAuth();
   const roast = roasts.find((r) => r.id === id);
+  const isVerified = Boolean(roast && isVerifiedFounder(roast.target.handle));
   const [selectedOption, setSelectedOption] = useState(() => {
     if (typeof window !== "undefined") {
       const q = new URLSearchParams(window.location.search).get("option");
@@ -460,6 +463,88 @@ export default function DefendPage({ params }) {
           </div>
         </div>
       </div>
+
+      {/* Founder Verification Gate */}
+      {isVerified ? (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "14px 18px",
+            background: "rgba(16, 185, 129, 0.08)",
+            border: "1px solid rgba(16, 185, 129, 0.25)",
+            borderRadius: "var(--radius-md)",
+            marginBottom: "28px",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <span style={{ fontSize: "22px" }}>🛡️</span>
+            <div>
+              <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--status-emerald)" }}>
+                Verified Founder Identity: @{twitterHandle}
+              </div>
+              <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                Your identity is cryptographically verified via 𝕏. Defense immunity enabled.
+              </div>
+            </div>
+          </div>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 700,
+              padding: "4px 10px",
+              background: "rgba(16, 185, 129, 0.15)",
+              color: "var(--status-emerald)",
+              borderRadius: "var(--radius-full)",
+              border: "1px solid rgba(16, 185, 129, 0.3)",
+            }}
+          >
+            ✓ Verified Founder
+          </span>
+        </div>
+      ) : (
+        <div
+          style={{
+            padding: "18px 20px",
+            background: "var(--bg-subtle)",
+            border: "1px solid var(--accent-coral-border)",
+            borderRadius: "var(--radius-md)",
+            marginBottom: "28px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "14px",
+          }}
+        >
+          <div>
+            <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+              Are you @{roast.target.handle}?
+            </div>
+            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+              Verify with 𝕏 to prove startup ownership and claim official founder immunity.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              className="btn btn-coral btn-sm"
+              onClick={() => signInWithTwitter()}
+            >
+              Verify with 𝕏
+            </button>
+            <button
+              className="btn btn-outline btn-sm"
+              onClick={() => devLoginAs(roast.target.handle)}
+              title="Instant claim for testing without Twitter developer API"
+            >
+              ⚡ Quick Claim (@{roast.target.handle})
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Defense Header */}
       <div style={{ textAlign: "center", marginBottom: "24px" }}>

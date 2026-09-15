@@ -123,8 +123,24 @@ export default function RoastCard({ roast, rank }) {
             {/* Comeback if posted */}
             {roast.defenseText && (
               <div className="roast-comeback-box">
-                <span className="roast-comeback-label">
-                  🎤 @{roast.target.handle}&apos;s Comeback
+                <span
+                  className="roast-comeback-label"
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <span>🎤 @{roast.target.handle}&apos;s Comeback</span>
+                  <span
+                    style={{
+                      fontSize: "10px",
+                      fontWeight: 700,
+                      color: "var(--status-emerald)",
+                      background: "rgba(16, 185, 129, 0.12)",
+                      padding: "2px 6px",
+                      borderRadius: "var(--radius-full)",
+                      border: "1px solid rgba(16, 185, 129, 0.25)",
+                    }}
+                  >
+                    ✓ Verified
+                  </span>
                 </span>
                 &ldquo;{roast.defenseText}&rdquo;
               </div>

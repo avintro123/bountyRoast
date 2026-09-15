@@ -5,13 +5,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import NotificationBell from "./NotificationBell";
 import ThemeToggle from "./ThemeToggle";
+import PopupModal from "./PopupModal";
 import { toggleMute, isMuted } from "@/lib/sounds";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const { user, twitterHandle, signInWithTwitter, signOut, devLoginAs } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [connected, setConnected] = useState(false);
-  const [showConnectNotice, setShowConnectNotice] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [devInput, setDevInput] = useState("");
+  const [authError, setAuthError] = useState(null);
   const [soundMuted, setSoundMuted] = useState(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("soundMuted") === "true";
@@ -46,12 +50,21 @@ export default function Navbar() {
     { href: "/#how-it-works", label: "How It Works" },
   ];
 
-  const handleConnect = () => {
-    setConnected((prev) => !prev);
-    setShowConnectNotice(true);
-    setTimeout(() => {
-      setShowConnectNotice(false);
-    }, 2800);
+  const handleTwitterLogin = async () => {
+    try {
+      setAuthError(null);
+      await signInWithTwitter();
+    } catch (err) {
+      setAuthError(err.message || "Could not launch Twitter OAuth.");
+    }
+  };
+
+  const handleDevLogin = (e) => {
+    e.preventDefault();
+    if (!devInput.trim()) return;
+    devLoginAs(devInput.trim());
+    setDevInput("");
+    setShowAuthModal(false);
   };
 
   const handleSoundToggle = () => {
@@ -106,11 +119,18 @@ export default function Navbar() {
           </li>
           <li>
             <button
-              className={`btn btn-sm ${connected ? "btn-coral" : "btn-outline"}`}
-              onClick={handleConnect}
-              style={{ cursor: "pointer" }}
+              className={`btn btn-sm ${twitterHandle ? "btn-coral" : "btn-outline"}`}
+              onClick={() => setShowAuthModal(true)}
+              style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
             >
-              {connected ? "✓ @you" : "Connect 𝕏"}
+              {twitterHandle ? (
+                <>
+                  <span style={{ fontSize: "14px" }}>🛡️</span>
+                  <span>@{twitterHandle}</span>
+                </>
+              ) : (
+                "Connect 𝕏"
+              )}
             </button>
           </li>
         </ul>
@@ -181,13 +201,13 @@ export default function Navbar() {
 
             <div className="mobile-nav-footer">
               <button
-                className={`btn btn-block ${connected ? "btn-lime" : "btn-fire"}`}
+                className={`btn btn-block ${twitterHandle ? "btn-coral" : "btn-fire"}`}
                 onClick={() => {
-                  handleConnect();
                   setMobileOpen(false);
+                  setShowAuthModal(true);
                 }}
               >
-                {connected ? "✓ 𝕏 Connected (@you)" : "Connect 𝕏 Account"}
+                {twitterHandle ? `✓ 𝕏 Connected (@${twitterHandle})` : "Connect 𝕏 Account"}
               </button>
               <div style={{ marginTop: "12px", textAlign: "center" }}>
                 <span
@@ -205,14 +225,104 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Floating Connect Toast */}
-      {showConnectNotice && (
-        <div className="connect-toast">
-          {connected
-            ? "⚡ Connected as @you (Prototype Mode)"
-            : "Disconnected from 𝕏"}
-        </div>
-      )}
+      {/* 𝕏 Authentication / Founder Claim Modal */}
+      <PopupModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        title={twitterHandle ? "Your 𝕏 Founder Identity" : "Connect 𝕏 Account"}
+      >
+        {twitterHandle ? (
+          <div style={{ textAlign: "center", padding: "12px 0" }}>
+            <img
+              src={`https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${twitterHandle}`}
+              alt="avatar"
+              style={{
+                width: "64px",
+                height: "64px",
+                borderRadius: "var(--radius-md)",
+                margin: "0 auto 12px",
+                border: "2px solid var(--accent-coral)",
+              }}
+            />
+            <div style={{ fontSize: "18px", fontWeight: 800, color: "var(--text-primary)" }}>
+              @{twitterHandle}
+            </div>
+            <div style={{ fontSize: "12px", color: "var(--status-emerald)", fontWeight: 600, marginTop: "4px" }}>
+              🛡️ Verified 𝕏 Identity Active
+            </div>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", margin: "16px 0 20px" }}>
+              You have access to claim founder defense chambers targeting <strong>@{twitterHandle}</strong>.
+            </p>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button
+                className="btn btn-outline btn-block"
+                onClick={() => {
+                  signOut();
+                  setShowAuthModal(false);
+                }}
+              >
+                Disconnect / Sign Out
+              </button>
+              <button
+                className="btn btn-coral btn-block"
+                onClick={() => setShowAuthModal(false)}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
+              Connect your 𝕏 (Twitter) account to prove founder ownership and unlock the <strong>Founder Defense Chamber</strong>.
+            </p>
+
+            <button
+              className="btn btn-coral btn-lg btn-block"
+              onClick={handleTwitterLogin}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "18px" }}
+            >
+              <span>𝕏</span>
+              <span>Sign in with Twitter</span>
+            </button>
+
+            {authError && (
+              <p style={{ color: "var(--accent-coral)", fontSize: "12px", marginBottom: "14px" }}>
+                {authError}
+              </p>
+            )}
+
+            <div style={{ borderTop: "1px dashed var(--border-subtle)", paddingTop: "14px", marginTop: "14px" }}>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" }}>
+                ⚡ Developer & Testing Sandbox
+              </div>
+              <p style={{ fontSize: "12px", color: "var(--text-secondary)", marginBottom: "10px" }}>
+                Simulate any founder identity locally to test Defense Chamber immunity:
+              </p>
+              <form onSubmit={handleDevLogin} style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="text"
+                  placeholder="e.g. shipcaptainAI"
+                  value={devInput}
+                  onChange={(e) => setDevInput(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "8px 12px",
+                    background: "var(--bg-subtle)",
+                    border: "1px solid var(--border-subtle)",
+                    borderRadius: "var(--radius-md)",
+                    color: "var(--text-primary)",
+                    fontSize: "13px",
+                  }}
+                />
+                <button type="submit" className="btn btn-outline btn-sm">
+                  Simulate
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </PopupModal>
     </>
   );
 }

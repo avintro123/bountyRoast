@@ -456,10 +456,23 @@ export default function RoastDetailPage({ params }) {
               textTransform: "uppercase",
               letterSpacing: "0.5px",
               color: "var(--status-emerald)",
-              marginBottom: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
-            🎤 Attached Comeback
+            <span>🎤 Attached Founder Comeback</span>
+            <span
+              style={{
+                fontSize: "10px",
+                background: "rgba(16, 185, 129, 0.15)",
+                padding: "2px 8px",
+                borderRadius: "var(--radius-full)",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+              }}
+            >
+              ✓ Verified Founder
+            </span>
           </div>
           <p
             style={{
