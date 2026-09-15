@@ -53,6 +53,7 @@ export default function DropRoastPage() {
         setBountyAmount(savedBounty);
 
         const newRoast = addRoast({
+          id: rId,
           handle: savedHandle,
           roastText: savedText || "Placed on The Grill.",
           bountyAmount: savedBounty,

@@ -296,7 +296,7 @@ export function RoastProvider({ children }) {
     ).toISOString();
 
     const roast = {
-      id: `roast-${Date.now()}`,
+      id: newRoast.id || `roast-${Date.now()}`,
       target: {
         handle: cleanHandle,
         displayName: cleanHandle,
@@ -321,10 +321,12 @@ export function RoastProvider({ children }) {
       comments: [],
     };
 
-    setRoasts((prev) => [roast, ...prev]);
+    setRoasts((prev) =>
+      prev.some((r) => r.id === roast.id) ? prev : [roast, ...prev],
+    );
     supabase
       .from("roasts")
-      .insert(toDbRoast(roast))
+      .upsert(toDbRoast(roast), { onConflict: "id" })
       .then(({ error }) => {
         if (error) {
           console.error("Failed to save roast to Supabase:", error.message);
