@@ -273,9 +273,23 @@ export default function Navbar() {
           </div>
         ) : (
           <div>
-            <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "16px" }}>
+            <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginBottom: "12px" }}>
               Connect your 𝕏 (Twitter) account to prove founder ownership and unlock the <strong>Founder Defense Chamber</strong>.
             </p>
+
+            <div
+              style={{
+                background: "var(--bg-subtle)",
+                border: "1px solid var(--border-subtle)",
+                borderRadius: "var(--radius-sm)",
+                padding: "8px 12px",
+                fontSize: "12px",
+                color: "var(--text-muted)",
+                marginBottom: "16px",
+              }}
+            >
+              💡 <strong>Testing locally?</strong> Use the <strong>⚡ Instant Simulate</strong> box below to verify as any founder immediately without requiring Twitter API keys!
+            </div>
 
             <button
               className="btn btn-coral btn-lg btn-block"
