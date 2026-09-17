@@ -1,17 +1,38 @@
 import { ImageResponse } from "next/og";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import { sanitizeHandle, sanitizeText } from "@/lib/sanitize";
 
 export const runtime = "nodejs";
 
 export async function GET(request) {
+  // 1. IP Rate Limiting (Prevents CPU/Memory exhaustion DoS via image rendering)
+  const clientIp = getClientIp(request);
+  const rateLimit = checkRateLimit(`og:${clientIp}`, 30, 60000);
+  if (!rateLimit.allowed) {
+    return new Response("Too Many Requests", {
+      status: 429,
+      headers: {
+        "Retry-After": Math.ceil(rateLimit.resetIn / 1000).toString(),
+        "Content-Type": "text/plain",
+      },
+    });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
 
-    const handle = searchParams.get("handle") || "shipcaptainAI";
-    const name = searchParams.get("name") || handle;
-    const bounty = searchParams.get("bounty") || "500";
-    const rank = searchParams.get("rank") || "#1";
+    const rawHandle = searchParams.get("handle") || "shipcaptainAI";
+    const handle = sanitizeHandle(rawHandle).slice(0, 30) || "founder";
+    const name = sanitizeText(searchParams.get("name") || handle, 40);
+    const rawBounty = searchParams.get("bounty") || "500";
+    const bounty = rawBounty.replace(/[^0-9]/g, "").slice(0, 7) || "500";
+    const rank = sanitizeText(searchParams.get("rank") || "#1", 8);
     const theme = searchParams.get("theme") === "dark" ? "dark" : "light";
-    let roast = searchParams.get("roast") || "Another ChatGPT wrapper that will be obsolete next Tuesday. At least the logo is nice.";
+    let roast = sanitizeText(
+      searchParams.get("roast") ||
+        "Another ChatGPT wrapper that will be obsolete next Tuesday. At least the logo is nice.",
+      160
+    );
 
     // Neatly truncate very long roasts for card balance
     if (roast.length > 150) {
@@ -272,6 +293,9 @@ export async function GET(request) {
       {
         width: 1200,
         height: 630,
+        headers: {
+          "Cache-Control": "public, max-age=86400, stale-while-revalidate=43200",
+        },
       }
     );
   } catch (e) {

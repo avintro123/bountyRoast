@@ -1,50 +1,115 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
+import {
+  sanitizeHandle,
+  sanitizeText,
+  validateAmount,
+  validateRoastId,
+  getSafeOrigin,
+} from "@/lib/sanitize";
+
+// Allowed paid game actions
+const ALLOWED_ACTIONS = new Set(["fuel", "drop", "clear"]);
 
 export async function POST(req) {
   try {
-    const { roastId, targetHandle, amount, action = "fuel", roastText = "" } = await req.json();
+    // 1. IP Rate Limiting (Defense against bot spam & wallet exhaustion)
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(`checkout-${clientIp}`, 15, 60000); // Max 15 sessions/min
 
-    // validate the amount (server-side-security check)
-    const numAmount = Number(amount);
-    if (!numAmount || numAmount < 1) {
-      return NextResponse.json({ error: "Min payment is $1" }, { status: 400 });
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: "Too many checkout requests. Please wait a moment." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.resetSeconds),
+          },
+        },
+      );
     }
 
-    // get the current website URL for redirects
-    const origin = req.headers.get("origin") || "http://localhost:3000";
+    // 2. Parse & Validate Payload
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
 
-    const effectiveRoastId = roastId || (action === "drop" ? `roast-${Date.now()}` : "");
+    const {
+      roastId: rawRoastId,
+      targetHandle: rawTargetHandle,
+      amount: rawAmount,
+      action = "fuel",
+      roastText: rawRoastText = "",
+    } = body;
 
-    // 3. Dynamic redirect URLs based on action ("clear" vs "drop" vs "fuel")
+    // Validate action enum
+    if (!ALLOWED_ACTIONS.has(action)) {
+      return NextResponse.json({ error: "Invalid action type" }, { status: 400 });
+    }
+
+    // Validate & clamp amount ($1.00 - $10,000.00)
+    const numAmount = validateAmount(rawAmount, 1, 10000);
+    if (!numAmount) {
+      return NextResponse.json(
+        { error: "Amount must be between $1.00 and $10,000.00" },
+        { status: 400 },
+      );
+    }
+
+    // Sanitize target handle
+    const targetHandle = sanitizeHandle(rawTargetHandle) || "founder";
+
+    // Sanitize user-provided roast text
+    const roastText = sanitizeText(rawRoastText, 280);
+
+    // Validate or generate roast ID
+    let effectiveRoastId = "";
+    if (rawRoastId) {
+      effectiveRoastId = validateRoastId(rawRoastId);
+      if (!effectiveRoastId && action !== "drop") {
+        return NextResponse.json({ error: "Invalid roast ID format" }, { status: 400 });
+      }
+    }
+    if (!effectiveRoastId && action === "drop") {
+      effectiveRoastId = `roast-${Date.now()}`;
+    }
+
+    // 3. Prevent Open Redirect Vulnerability by strictly validating origin
+    const origin = getSafeOrigin(req);
+
+    // 4. Construct Dynamic Return URLs
     let successUrl;
     let cancelUrl;
 
     if (action === "clear") {
-      successUrl = `${origin}/defend/${roastId}?payment_success=clear&amount=${numAmount}`;
-      cancelUrl = `${origin}/defend/${roastId}?payment_cancelled=clear`;
+      successUrl = `${origin}/defend/${effectiveRoastId}?payment_success=clear&amount=${numAmount}`;
+      cancelUrl = `${origin}/defend/${effectiveRoastId}?payment_cancelled=clear`;
     } else if (action === "drop") {
-      successUrl = `${origin}/drop?payment_success=drop&roast_id=${effectiveRoastId}&handle=${encodeURIComponent(targetHandle || "")}&amount=${numAmount}`;
+      successUrl = `${origin}/drop?payment_success=drop&roast_id=${effectiveRoastId}&handle=${encodeURIComponent(targetHandle)}&amount=${numAmount}`;
       cancelUrl = `${origin}/drop?payment_cancelled=drop`;
     } else {
       // fuel
-      successUrl = `${origin}/roast/${roastId}?payment_success&amount=${numAmount}`;
-      cancelUrl = `${origin}/roast/${roastId}?payment_cancelled`;
+      successUrl = `${origin}/roast/${effectiveRoastId}?payment_success&amount=${numAmount}`;
+      cancelUrl = `${origin}/roast/${effectiveRoastId}?payment_cancelled`;
     }
 
     const productName =
       action === "drop"
-        ? `DROP ROAST on @${targetHandle || "founder"} ($${numAmount} Bounty)`
-        : `${action.toUpperCase()} on @${targetHandle || "founder"} | BountyRoast`;
+        ? `DROP ROAST on @${targetHandle} ($${numAmount} Bounty)`
+        : `${action.toUpperCase()} on @${targetHandle} | BountyRoast`;
 
     const productDescription =
       action === "drop"
-        ? `Deploy a $${numAmount} initial cash bounty to place @${targetHandle || "founder"} on The Grill`
+        ? `Deploy a $${numAmount} initial cash bounty to place @${targetHandle} on The Grill`
         : action === "fuel"
         ? `Fuel for the fire`
         : `Defense against the roast`;
 
-    // create official stripe checkout session
+    // 5. Create Official Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -55,32 +120,28 @@ export async function POST(req) {
               name: productName,
               description: productDescription,
             },
-            unit_amount: Math.round(numAmount * 100), // stripe takes amount in CENTS ($5=500)
+            unit_amount: Math.round(numAmount * 100), // Stripe expects integer in CENTS
           },
           quantity: 1,
         },
       ],
       mode: "payment",
-      // Where to send the user after paying
       success_url: successUrl,
-      // Where to send the user if they click "Back" on Stripe
       cancel_url: cancelUrl,
-      // Crucial: Metadata travels with the payment to the webhook!
       metadata: {
         roastId: effectiveRoastId,
-        targetHandle: targetHandle || "",
-        roastText: (roastText || "").slice(0, 400),
-        action: action, //"fuel" | "drop" | "clear"
+        targetHandle,
+        roastText: roastText.slice(0, 400),
+        action,
         amount: String(numAmount),
       },
     });
 
-    // Return the official Stripe Checkout URL to the browser
     return NextResponse.json({ url: session.url });
   } catch (err) {
-    console.error("stripe checkout error:", err);
+    console.error("Secure Stripe checkout error:", err);
     return NextResponse.json(
-      { error: err.message || "Failed to create checkout session" },
+      { error: "Failed to create checkout session" },
       { status: 500 },
     );
   }

@@ -20,6 +20,12 @@ import {
   toDbComment,
   fromDbComment,
 } from "@/lib/roastMappers";
+import {
+  sanitizeHandle,
+  sanitizeText,
+  validateAmount,
+  validateRoastId,
+} from "@/lib/sanitize";
 
 const RoastContext = createContext(null);
 
@@ -288,7 +294,9 @@ export function RoastProvider({ children }) {
   }, []);
 
   const addRoast = useCallback((newRoast) => {
-    const cleanHandle = (newRoast.handle || "").replace(/^@/, "").trim();
+    const cleanHandle = sanitizeHandle(newRoast.handle || "").slice(0, 30) || "founder";
+    const cleanRoastText = sanitizeText(newRoast.roastText || "", 500);
+    const cleanBounty = validateAmount(newRoast.bountyAmount, 1, 100000) || 5;
 
     const now = new Date();
     const expiresAt = new Date(
@@ -296,15 +304,15 @@ export function RoastProvider({ children }) {
     ).toISOString();
 
     const roast = {
-      id: newRoast.id || `roast-${Date.now()}`,
+      id: validateRoastId(newRoast.id) || `roast-${Date.now()}`,
       target: {
         handle: cleanHandle,
         displayName: cleanHandle,
-        avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${cleanHandle}`,
+        avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(cleanHandle)}`,
         bio: "",
       },
-      roastText: newRoast.roastText,
-      bountyAmount: newRoast.bountyAmount,
+      roastText: cleanRoastText,
+      bountyAmount: cleanBounty,
       roaster: {
         handle: "you",
         displayName: "You",
@@ -316,7 +324,7 @@ export function RoastProvider({ children }) {
       spectatorContributions: 0,
       defenseStatus: "none",
       defenseText: null,
-      isHot: newRoast.bountyAmount >= 100,
+      isHot: cleanBounty >= 100,
       tags: [],
       comments: [],
     };
@@ -394,12 +402,13 @@ export function RoastProvider({ children }) {
   const defendRoast = useCallback((roastId, defenseType, defenseText) => {
     const isPayToClear = defenseType === "defended" && !defenseText;
     const finalStatus = isPayToClear ? "cleared" : defenseType;
+    const cleanDefenseText = defenseText ? sanitizeText(defenseText, 500) : null;
 
     supabase
       .from("roasts")
       .update({
         defense_status: finalStatus,
-        defense_text: defenseText || null,
+        defense_text: cleanDefenseText,
       })
       .eq("id", roastId)
       .then(({ error }) => {
@@ -465,16 +474,19 @@ export function RoastProvider({ children }) {
       if (!text || !text.trim()) return null;
 
       const cleanHandle =
-        (handle || "you").replace(/^@/, "").trim() || "spectator";
+        sanitizeHandle(handle || "you").slice(0, 30) || "spectator";
+      const cleanDisplayName = sanitizeText(displayName || cleanHandle, 40);
+      const cleanText = sanitizeText(text, 500);
+
       const commentId = `c-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const newComment = {
         id: commentId,
         author: {
           handle: cleanHandle,
-          displayName: displayName || cleanHandle,
-          avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${cleanHandle}`,
+          displayName: cleanDisplayName,
+          avatar: `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(cleanHandle)}`,
         },
-        text: text.trim(),
+        text: cleanText,
         createdAt: new Date().toISOString(),
         likes: 0,
         isTarget: Boolean(isTarget),
