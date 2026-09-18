@@ -10,6 +10,7 @@ import { playFuel } from "@/lib/sounds";
 import ShareCardModal from "@/components/ShareCardModal";
 import RoastComments from "@/components/RoastComments";
 import SpectatorBadge from "@/components/SpectatorBadge";
+import ComebackBattle from "@/components/ComebackBattle";
 
 function getTimeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -439,61 +440,9 @@ export default function RoastDetailPage({ params }) {
         ))}
       </div>
 
-      {/* Defense / Comeback Content if any */}
+      {/* Defense / Comeback Content & Spectator Battle Arena */}
       {roast.defenseStatus !== "none" && roast.defenseText && (
-        <div
-          className="card"
-          style={{
-            marginBottom: "24px",
-            borderLeft: "3px solid var(--status-emerald)",
-            background: "var(--status-emerald-subtle)",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "11px",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-              color: "var(--status-emerald)",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <span>🎤 Attached Founder Comeback</span>
-            <span
-              style={{
-                fontSize: "10px",
-                background: "rgba(16, 185, 129, 0.15)",
-                padding: "2px 8px",
-                borderRadius: "var(--radius-full)",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
-              }}
-            >
-              ✓ Verified Founder
-            </span>
-          </div>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.6,
-              color: "var(--text-primary)",
-              fontStyle: "italic",
-            }}
-          >
-            &ldquo;{roast.defenseText}&rdquo;
-          </p>
-          <p
-            style={{
-              color: "var(--text-muted)",
-              fontSize: "12px",
-              marginTop: "8px",
-            }}
-          >
-            — @{roast.target.handle}
-          </p>
-        </div>
+        <ComebackBattle roast={roast} isCompact={false} />
       )}
 
       {/* Fuel the Fire (if active) */}

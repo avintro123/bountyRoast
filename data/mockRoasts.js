@@ -93,6 +93,10 @@ export const mockRoasts = [
     defenseStatus: "defended",
     defenseText:
       "At least we HAVE users. Your GitHub has 2 stars and one is from your mom.",
+    battleVotes: {
+      roaster: 142,
+      founder: 218,
+    },
     isHot: true,
     tags: ["productivity", "notion", "performance"],
     comments: [
@@ -281,6 +285,10 @@ export const mockRoasts = [
     defenseStatus: "defended",
     defenseText:
       "At least I have 50k followers. Your product has 50k lines of code nobody asked for.",
+    battleVotes: {
+      roaster: 98,
+      founder: 134,
+    },
     isHot: false,
     tags: ["build-in-public", "mrr", "vibes"],
     comments: [
@@ -320,6 +328,10 @@ export const mockRoasts = [
     defenseStatus: "defended",
     defenseText:
       "It's called STRATEGY. I'm building anticipation. Google it. Oh wait, you can't because your SEO tool doesn't even rank.",
+    battleVotes: {
+      roaster: 165,
+      founder: 112,
+    },
     isHot: false,
     tags: ["landing-page", "irony", "design"],
     comments: [

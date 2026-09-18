@@ -8,6 +8,7 @@ import { playFuel } from "@/lib/sounds";
 import CountdownTimer from "./CountdownTimer";
 import ShareCardModal from "./ShareCardModal";
 import RoastComments from "./RoastComments";
+import ComebackBattle from "./ComebackBattle";
 
 function getTimeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -143,6 +144,9 @@ export default function RoastCard({ roast, rank }) {
                   </span>
                 </span>
                 &ldquo;{roast.defenseText}&rdquo;
+
+                {/* Spectator Comeback Battle */}
+                <ComebackBattle roast={roast} isCompact={true} />
               </div>
             )}
 

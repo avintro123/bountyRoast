@@ -427,7 +427,8 @@ export function RoastProvider({ children }) {
           ? {
               ...r,
               defenseStatus: finalStatus,
-              defenseText: defenseText || null,
+              defenseText: cleanDefenseText,
+              battleVotes: cleanDefenseText ? { roaster: 1, founder: 1 } : null,
               isCleared: isPayToClear,
             }
           : r,
@@ -562,9 +563,44 @@ export function RoastProvider({ children }) {
       });
   }, []);
 
+  const voteBattle = useCallback((roastId, choice) => {
+    if (choice !== "roaster" && choice !== "founder") return;
+
+    setRoasts((prev) =>
+      prev.map((r) => {
+        if (r.id !== roastId) return r;
+        const currentVotes = r.battleVotes || { roaster: 25, founder: 35 };
+        return {
+          ...r,
+          battleVotes: {
+            ...currentVotes,
+            [choice]: (currentVotes[choice] || 0) + 1,
+          },
+        };
+      })
+    );
+
+    // Save vote in localStorage to prevent repeat voting
+    if (typeof window !== "undefined") {
+      try {
+        const rawVotes = localStorage.getItem("bountyroast_battle_votes") || "{}";
+        const parsed = JSON.parse(rawVotes);
+        parsed[roastId] = choice;
+        localStorage.setItem("bountyroast_battle_votes", JSON.stringify(parsed));
+      } catch (e) {
+        console.warn("Could not save battle vote to localStorage:", e);
+      }
+    }
+
+    setTickerEvents((prev) => [
+      `⚔️ Spectator voted for ${choice === "roaster" ? "Roaster 🔥" : "Founder 🛡️"} in Comeback Battle!`,
+      ...prev,
+    ]);
+  }, []);
+
   // Sync state to localStorage whenever it changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && roasts.length > 0) {
       localStorage.setItem("roasts", JSON.stringify(roasts));
       localStorage.setItem("tickerEvents", JSON.stringify(tickerEvents));
       localStorage.setItem("stats", JSON.stringify(stats));
@@ -585,6 +621,7 @@ export function RoastProvider({ children }) {
         defendRoast,
         addComment,
         likeComment,
+        voteBattle,
       }}
     >
       {children}
