@@ -76,12 +76,25 @@ export function AuthProvider({ children }) {
       const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
       const redirectUrl = redirectTo || (typeof window !== "undefined" ? window.location.href : origin);
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: "twitter",
+      // Modern Supabase X / Twitter (OAuth 2.0) uses provider: "x"
+      let { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "x",
         options: {
           redirectTo: redirectUrl,
         },
       });
+
+      // Fallback to legacy "twitter" if needed
+      if (error && error.message?.toLowerCase().includes("unsupported provider")) {
+        const fallback = await supabase.auth.signInWithOAuth({
+          provider: "twitter",
+          options: {
+            redirectTo: redirectUrl,
+          },
+        });
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) throw error;
       return data;
