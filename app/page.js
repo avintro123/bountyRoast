@@ -182,34 +182,36 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 5. Hall of Flame (Archive) ── */}
+      {/* ── 5. Hall of Flame (Teaser) ── */}
       <section className="section" id="hall-of-flame">
-        <div style={{ textAlign: "center", marginBottom: "28px" }}>
-          <h2 className="section-title" style={{ justifyContent: "center" }}>
+        <div className="hof-teaser">
+          <h2 className="section-title" style={{ justifyContent: "center", marginBottom: "4px" }}>
             🏛️ Hall of Flame
           </h2>
-          <p style={{ color: "var(--text-muted)", fontSize: "14px", marginTop: "4px" }}>
-            Retired, defended, and expired roasts from platform history
+          <p style={{ color: "var(--text-muted)", fontSize: "14px", marginBottom: "0" }}>
+            The legendary archive — expired, defended, and cleared roasts from platform history
           </p>
-        </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "14px" }}>
-          {allHallOfFlame.slice(0, 6).map((item, i) => (
-            <div key={i} className="card" style={{ padding: "18px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <span style={{ fontWeight: 700, fontSize: "14px" }}>{item.target}</span>
-                <span className="badge badge-expired" style={{ fontSize: "10px" }}>
-                  ${item.bountyAmount}
-                </span>
+          <div className="hof-teaser-grid">
+            {allHallOfFlame.slice(0, 3).map((item, i) => (
+              <div key={i} className="hof-teaser-item">
+                <div className="hof-teaser-item-handle">
+                  {item.target}
+                  {item.legend && " 🏆"}
+                </div>
+                <p className="hof-teaser-item-quote">
+                  &ldquo;{item.roastText}&rdquo;
+                </p>
+                <div className="hof-teaser-item-bounty">
+                  ${item.bountyAmount} bounty
+                </div>
               </div>
-              <p style={{ fontSize: "13px", color: "var(--text-secondary)", fontStyle: "italic", marginBottom: "12px" }}>
-                &ldquo;{item.roastText}&rdquo;
-              </p>
-              <span className={`badge ${item.finalStatus === "expired" ? "badge-expired" : "badge-defended"}`}>
-                {item.finalStatus === "expired" ? "☠️ Expired" : "🛡️ Defended"}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          <Link href="/hall-of-flame" className="btn btn-cayenne">
+            View Full Archive →
+          </Link>
         </div>
       </section>
 
@@ -219,7 +221,7 @@ export default function HomePage() {
           <a href="#the-grill">The Grill</a>
           <a href="#how-it-works">How It Works</a>
           <a href="/drop">Drop Roast</a>
-          <a href="#hall-of-flame">Archive</a>
+          <a href="/hall-of-flame">Archive</a>
         </div>
         <p style={{ color: "var(--text-muted)", fontSize: "12px" }}>
           © 2026 bountyroast.lol · The Public Attention Economy

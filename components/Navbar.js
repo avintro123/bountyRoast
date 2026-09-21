@@ -46,7 +46,7 @@ export default function Navbar() {
   const links = [
     { href: "/", label: "The Grill" },
     { href: "/drop", label: "Drop a Roast" },
-    { href: "/#hall-of-flame", label: "Hall of Flame" },
+    { href: "/hall-of-flame", label: "Hall of Flame" },
     { href: "/#how-it-works", label: "How It Works" },
   ];
 
