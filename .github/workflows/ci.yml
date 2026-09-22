@@ -1,0 +1,120 @@
+name: BountyRoast CI Quality Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ------------------------------------------------------------------
+  # JOB 1: Code Style & Quality Check (ESLint)
+  # ------------------------------------------------------------------
+  lint:
+    name: 🎨 Lint & Code Style
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 with npm caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies cleanly
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  # ------------------------------------------------------------------
+  # JOB 2: Automated Unit Tests
+  # ------------------------------------------------------------------
+  test:
+    name: 🧪 Automated Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 with npm caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Run Unit Tests
+        run: npm test
+
+  # ------------------------------------------------------------------
+  # JOB 3: Security & Secret Leak Prevention
+  # ------------------------------------------------------------------
+  security:
+    name: 🛡️ Security & Secret Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check for accidentally committed .env files
+        run: |
+          if [ -f .env.local ] || [ -f .env.production ]; then
+            echo "❌ CRITICAL SECURITY ALERT: An unencrypted .env file was found in Git!"
+            exit 1
+          else
+            echo "✅ Clean: No sensitive local .env files committed."
+          fi
+
+      - name: Scan repository for live secret patterns
+        run: |
+          LEAKS=$(grep -rnE "sk_live_[0-9a-zA-Z]{24,}" . --exclude-dir={node_modules,.git,.next} || true)
+          if [ -n "$LEAKS" ]; then
+            echo "❌ CRITICAL SECURITY ALERT: Leaked live Stripe secret key detected in source code:"
+            echo "$LEAKS"
+            exit 1
+          fi
+          echo "✅ Clean: No live Stripe secrets found in committed files."
+
+      - name: Audit npm dependencies for high/critical CVEs
+        run: npm audit --audit-level=high
+
+  # ------------------------------------------------------------------
+  # JOB 4: Next.js Production Build Verification
+  # ------------------------------------------------------------------
+  build:
+    name: 🏗️ Production Build Check
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20 with npm caching
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Restore Next.js cache for ultra-fast builds
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js application
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://dummy-ci-project.supabase.co"
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "dummy-ci-anon-key"
+          STRIPE_SECRET_KEY: "sk_test_dummy_ci_key"
+        run: npm run build

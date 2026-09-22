@@ -1,3 +1,7 @@
+# 🔥 BountyRoast
+
+[![CI Quality Gates](https://github.com/avintro123/bountyRoast/actions/workflows/ci.yml/badge.svg)](https://github.com/avintro123/bountyRoast/actions/workflows/ci.yml)
+
 # 🔥 BountyRoast.lol — Pay to Roast. Pay to Survive.
 
 The internet's spiciest founder roast leaderboard. Pay to rank roasts on indie founders. Founders have 72 hours to defend themselves, or stay flame-grilled on **The Grill**.
@@ -50,10 +54,12 @@ Inspired by clean, human-crafted indie web design (warm paper minimalism, deep i
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 18.17+ or higher
 - npm, pnpm, or yarn
 
 ### Installation
+
 ```bash
 git clone https://github.com/your-username/bountyroast.git
 cd bountyroast
@@ -61,17 +67,21 @@ npm install
 ```
 
 ### Run Locally
+
 ```bash
 npm run dev
 ```
+
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Lint & Quality Check
+
 ```bash
 npm run lint
 ```
 
 ### Production Build
+
 ```bash
 npm run build
 npm run start
@@ -80,4 +90,5 @@ npm run start
 ---
 
 ## 📄 License
+
 MIT License © 2026 BountyRoast.lol
