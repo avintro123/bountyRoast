@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Output standalone build for ultra-small Docker images (~130MB instead of ~1.5GB)
+  output: "standalone",
+
   // 1. Hide the Next.js header to prevent version fingerprinting
   poweredByHeader: false,
 
@@ -31,7 +34,8 @@ const nextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+            value:
+              "camera=(), microphone=(), geolocation=(), interest-cohort=()",
           },
           {
             key: "Content-Security-Policy",
