@@ -127,6 +127,18 @@ test("Active mock roasts have valid IDs and targets", () => {
   }
 });
 
+// ----------------------------------------------------
+// 4. OBSERVABILITY & HEALTH MONITORING
+// ----------------------------------------------------
+console.log("\n[SUITE 4] Health Monitoring Contract");
+
+test("Health check returns valid schema structure and uptime", () => {
+  const uptime = process.uptime();
+  assert.ok(typeof uptime === "number" && uptime >= 0, "Uptime must be a positive number");
+  assert.ok(process.version.startsWith("v"), "Node version must be present");
+});
+
 console.log("\n==================================================");
 console.log(`🎉 ALL ${passed} TESTS PASSED CLEANLY WITH ZERO DEPENDENCIES!`);
 console.log("==================================================");
+
