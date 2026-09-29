@@ -1,7 +1,7 @@
 # ==============================================================================
 # STAGE 1: Base Alpine Image
 # ==============================================================================
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
@@ -11,7 +11,7 @@ RUN apk add --no-cache libc6-compat
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci || npm install
 
 # ==============================================================================
 # STAGE 3: Build Next.js Production Bundle
@@ -32,7 +32,7 @@ RUN npm run build
 # ==============================================================================
 # STAGE 4: Production Runner (Ultra-minimal & secure)
 # ==============================================================================
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
