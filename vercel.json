@@ -1,7 +1,7 @@
 {
   "framework": "nextjs",
   "buildCommand": "npm run build",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci || npm install",
   "regions": ["iad1"],
   "functions": {
     "app/api/**/*.js": {
