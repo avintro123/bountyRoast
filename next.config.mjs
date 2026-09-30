@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Output standalone build for ultra-small Docker images (~130MB instead of ~1.5GB)
-  output: "standalone",
+  // Output standalone build for ultra-small Docker images, but omit on Vercel to prevent ENOENT next-server.js.nft.json regression
+  output: process.env.VERCEL ? undefined : "standalone",
 
   // 1. Hide the Next.js header to prevent version fingerprinting
   poweredByHeader: false,
